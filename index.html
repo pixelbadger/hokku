@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hokku — a desk appliance that reads the morning papers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&family=Shippori+Mincho:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#E9E5DA;        /* newsprint */
+    --paper-2:#E2DDD0;      /* deeper newsprint for panels */
+    --ink:#1A1C22;          /* printer's ink */
+    --slate:#6B6457;        /* muted caption */
+    --cinnabar:#A8392B;     /* the seal */
+    --hair:#CBC5B5;         /* hairline rule */
+    --press:#1B1E25;        /* dark code panel */
+    --press-ink:#D9D5C9;    /* type on the dark panel */
+    --measure:760px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Newsreader",Georgia,serif;
+    font-weight:400;
+    font-size:19px;
+    line-height:1.62;
+    background-image:
+      radial-gradient(rgba(0,0,0,.018) 1px, transparent 1px),
+      radial-gradient(rgba(0,0,0,.012) 1px, transparent 1px);
+    background-size:3px 3px, 7px 7px;
+    background-position:0 0, 2px 3px;
+  }
+  .wrap{max-width:var(--measure);margin:0 auto;padding:0 28px}
+
+  /* ---- section head: a chop (seal) carrying the section's true name ---- */
+  .shead{display:grid;grid-template-columns:54px 1fr;column-gap:24px;align-items:start;margin:0 0 18px}
+  @media(max-width:520px){.shead{grid-template-columns:46px 1fr;column-gap:16px}}
+  .chop{display:flex;flex-direction:column;align-items:center;text-align:center}
+  .chop .box{width:54px;height:54px;border:1px solid var(--cinnabar);border-radius:3px;
+    background:rgba(168,57,43,.05);display:flex;align-items:center;justify-content:center}
+  @media(max-width:520px){.chop .box{width:46px;height:46px}}
+  .chop .kanji{font-family:"Shippori Mincho",serif;font-weight:600;font-size:2rem;line-height:1;color:var(--ink)}
+  @media(max-width:520px){.chop .kanji{font-size:1.7rem}}
+  .chop .gloss{margin-top:7px;font-family:"IBM Plex Mono",monospace;font-size:8px;
+    letter-spacing:.04em;text-transform:uppercase;color:var(--cinnabar);line-height:1.35;max-width:66px}
+  .shead .col{min-width:0}
+  .shead .eyebrow{margin-bottom:.95rem}
+  .shead .eyebrow::before{display:none}
+  .shead h2.title{margin-bottom:0}
+
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:11.5px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--slate);display:flex;align-items:center;gap:.7em;margin:0 0 1.1rem;
+  }
+  .eyebrow::before{content:"";width:9px;height:9px;background:var(--cinnabar);flex:none;border-radius:1px}
+  h2.title{
+    font-family:"Fraunces",Georgia,serif;font-optical-sizing:auto;
+    font-weight:400;font-size:clamp(1.7rem,4.4vw,2.5rem);line-height:1.08;
+    letter-spacing:-.01em;margin:0 0 1.1rem;
+  }
+  p{margin:0 0 1.15rem}
+  .lede{font-size:1.12rem;color:#33343a}
+  a{color:var(--cinnabar);text-decoration:none;border-bottom:1px solid rgba(168,57,43,.35)}
+  a:hover{border-bottom-color:var(--cinnabar)}
+  strong{font-weight:500}
+  em{font-style:italic}
+  .small{font-size:.86rem;color:var(--slate);line-height:1.5}
+
+  section{padding:62px 0;border-top:1px solid var(--hair)}
+
+  /* ============ HERO ============ */
+  .hero{position:relative;overflow:hidden;padding:74px 0 64px;border-top:none}
+  .hero-ghost{position:absolute;right:-3%;top:2%;font-family:"Shippori Mincho",serif;font-weight:700;
+    font-size:30rem;line-height:.8;color:var(--ink);opacity:.045;pointer-events:none;user-select:none;z-index:0}
+  @media(max-width:620px){.hero-ghost{font-size:18rem;right:-8%;top:6%}}
+  .hero > *{position:relative;z-index:1}
+  .hero .eyebrow{margin-bottom:1.4rem}
+  .hero-name{display:flex;align-items:flex-end;gap:26px;flex-wrap:wrap}
+  .wordmark{
+    font-family:"Fraunces",Georgia,serif;font-weight:300;
+    font-size:clamp(3.4rem,13vw,7rem);line-height:.92;letter-spacing:-.035em;margin:0;
+  }
+  .wordmark .dot{color:var(--cinnabar)}
+  .namechop{display:flex;flex-direction:column;align-items:center;margin-bottom:.7rem}
+  .namechop .v{writing-mode:vertical-rl;font-family:"Shippori Mincho",serif;font-weight:600;
+    font-size:1.95rem;letter-spacing:.12em;color:var(--cinnabar);
+    border:1px solid var(--cinnabar);border-radius:3px;padding:11px 6px;background:rgba(168,57,43,.05)}
+  .namechop .gloss{margin-top:8px;font-family:"IBM Plex Mono",monospace;font-size:8.5px;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--cinnabar)}
+  .tagline{font-size:clamp(1.05rem,2.4vw,1.32rem);color:#34353b;max-width:36ch;margin:1.4rem 0 0}
+
+  .stamp{
+    margin:46px 0 6px;display:grid;grid-template-columns:1fr auto;gap:30px;align-items:start;
+    padding:34px 36px;background:rgba(255,255,255,.34);border:1px solid var(--hair);
+  }
+  .haiku{
+    font-family:"Fraunces",Georgia,serif;font-weight:300;font-optical-sizing:auto;
+    font-size:clamp(1.5rem,4.6vw,2.15rem);line-height:1.32;letter-spacing:-.005em;margin:0;
+  }
+  .haiku .l{display:block}
+  .counts{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--cinnabar);
+    text-align:right;line-height:1;display:flex;flex-direction:column;
+    gap:calc(clamp(1.5rem,4.6vw,2.15rem) * 1.32 - 12px);padding-top:.55em}
+  .stamp-foot{display:flex;align-items:center;gap:14px;margin-top:20px}
+  .stamp-foot .cap{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--slate)}
+  .seal{width:46px;height:46px;flex:none;display:block}
+
+  /* ============ signal / noise ============ */
+  .duet{display:grid;grid-template-columns:1fr 46px 1fr;gap:22px;align-items:center;margin-top:26px}
+  @media(max-width:620px){.duet{grid-template-columns:1fr;gap:18px}.duet .arrow{transform:rotate(90deg);margin:2px auto}}
+  .noise{font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.5;color:#8b8576;
+    border:1px solid var(--hair);padding:16px;background:rgba(0,0,0,.015);height:100%;overflow:hidden}
+  .noise b{color:#6f6859;font-weight:500;display:block;margin-bottom:5px;letter-spacing:.04em}
+  .noise span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .signal{font-family:"Fraunces",Georgia,serif;font-weight:300;font-size:1.32rem;line-height:1.34;
+    border:1px solid var(--cinnabar);padding:18px 20px;background:rgba(255,255,255,.4);height:100%;
+    display:flex;flex-direction:column;justify-content:center}
+  .arrow{width:46px;height:46px;display:flex;align-items:center;justify-content:center}
+
+  /* ============ tables ============ */
+  table{width:100%;border-collapse:collapse;font-size:.96rem}
+  caption{text-align:left;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--slate);padding:0 0 10px}
+  th,td{padding:11px 6px;text-align:left;border-bottom:1px solid var(--hair);vertical-align:top}
+  thead th{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:500;letter-spacing:.13em;
+    text-transform:uppercase;color:var(--slate);border-bottom:1.5px solid var(--ink)}
+  td.num,th.num{text-align:right;font-family:"IBM Plex Mono",monospace;white-space:nowrap;font-size:.9rem}
+  .part{font-weight:500;font-family:"Fraunces",serif;font-size:1.02rem}
+  .part-note{display:block;color:var(--slate);font-size:.82rem;font-family:"Newsreader",serif;line-height:1.4;margin-top:2px}
+  tr.total td{border-bottom:none;border-top:1.5px solid var(--ink);font-weight:500;padding-top:13px}
+  tr.total .part{font-size:1.06rem}
+  td.kept{color:var(--cinnabar)}
+  .pill{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--cinnabar);border:1px solid var(--cinnabar);border-radius:2px;
+    padding:2px 7px;margin-left:8px;vertical-align:middle}
+  .sidebar{margin-top:34px;padding:24px 26px;background:var(--paper-2);border:1px solid var(--hair)}
+  .sidebar h3{font-family:"Fraunces",serif;font-weight:400;font-size:1.18rem;margin:.1rem 0 .5rem}
+
+  /* ============ the reuse note — a quiet inset like a margin gloss ============ */
+  .mottai{margin-top:34px;display:grid;grid-template-columns:54px 1fr;column-gap:24px;align-items:start}
+  @media(max-width:520px){.mottai{grid-template-columns:46px 1fr;column-gap:16px}}
+  .mottai .vchop{display:flex;flex-direction:column;align-items:center}
+  .mottai .vchop .v{writing-mode:vertical-rl;font-family:"Shippori Mincho",serif;font-weight:600;
+    font-size:1.5rem;letter-spacing:.1em;color:var(--cinnabar);border:1px solid var(--cinnabar);
+    border-radius:3px;padding:10px 6px;background:rgba(168,57,43,.05)}
+  .mottai .vchop .gloss{margin-top:7px;font-family:"IBM Plex Mono",monospace;font-size:8px;
+    letter-spacing:.04em;text-transform:uppercase;color:var(--cinnabar);line-height:1.35;max-width:60px;text-align:center}
+  .mottai p{margin:0;font-size:1rem;color:#34353b}
+  .mottai p + p{margin-top:.9rem}
+
+  /* ============ flow / steps ============ */
+  .flow{counter-reset:step;margin:18px 0 0;padding:0;list-style:none}
+  .flow li{position:relative;padding:0 0 26px 56px;border-left:1px solid var(--hair);margin-left:18px}
+  .flow li:last-child{border-left-color:transparent;padding-bottom:0}
+  .flow li::before{counter-increment:step;content:counter(step);
+    position:absolute;left:-18px;top:-3px;width:36px;height:36px;border-radius:50%;
+    background:var(--paper);border:1px solid var(--ink);
+    font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink);
+    display:flex;align-items:center;justify-content:center}
+  .flow h4{font-family:"Fraunces",serif;font-weight:500;font-size:1.08rem;margin:.15rem 0 .3rem}
+  .flow p{margin:0;color:#3a3b41;font-size:.98rem}
+  .flow code{font-family:"IBM Plex Mono",monospace;font-size:.84em;background:rgba(0,0,0,.05);padding:1px 5px;border-radius:2px}
+
+  ol.steps{counter-reset:s;list-style:none;margin:14px 0 0;padding:0}
+  ol.steps > li{position:relative;padding-left:46px;margin-bottom:24px}
+  ol.steps > li::before{counter-increment:s;content:counter(s,decimal-leading-zero);
+    position:absolute;left:0;top:.05em;font-family:"IBM Plex Mono",monospace;font-size:13px;
+    color:var(--cinnabar);font-weight:500}
+  ol.steps h4{font-family:"Fraunces",serif;font-weight:500;font-size:1.06rem;margin:0 0 .35rem}
+  ol.steps p{margin:0 0 .5rem;font-size:.97rem;color:#34353b}
+
+  /* ============ code panels ============ */
+  .code{background:var(--press);color:var(--press-ink);border-radius:3px;
+    font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.62;
+    padding:20px 22px;overflow-x:auto;margin:14px 0 8px;border:1px solid #000}
+  .code .h{display:block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8f8a7c;margin:-4px 0 12px}
+  .code .c{color:#8f8a7c}
+  .code .k{color:#d98a73}
+  .code .s{color:#b9c39b}
+  .code .fn{color:#cdb98a}
+  pre{margin:0;white-space:pre}
+
+  .stacklist{list-style:none;margin:14px 0 0;padding:0}
+  .stacklist li{padding:11px 0;border-bottom:1px solid var(--hair);display:flex;gap:14px;align-items:baseline}
+  .stacklist li:last-child{border-bottom:none}
+  .stacklist .role{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--slate);flex:none;width:96px;padding-top:3px}
+  .stacklist .what{font-size:.98rem}
+  .stacklist .what b{font-weight:500;font-family:"Fraunces",serif}
+
+  .pinmap{font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1.75;
+    background:rgba(255,255,255,.34);border:1px solid var(--hair);padding:18px 20px;color:#3a3b41;margin-top:18px}
+  .pinmap .pin{color:var(--cinnabar)}
+
+  .caveat{border-left:2px solid var(--cinnabar);padding:2px 0 2px 20px;margin:0 0 22px}
+  .caveat h4{font-family:"Fraunces",serif;font-weight:500;font-size:1.05rem;margin:0 0 .3rem}
+  .caveat p{margin:0;font-size:.97rem;color:#34353b}
+
+  /* the paper section — a quiet feature, set on dark like an inked plate */
+  .plate{background:var(--press);color:var(--press-ink);padding:34px 34px 30px;border-radius:3px;margin-top:8px;position:relative;overflow:hidden}
+  .plate .pk{position:absolute;right:18px;bottom:-14px;font-family:"Shippori Mincho",serif;font-weight:700;
+    font-size:9rem;line-height:1;color:#fff;opacity:.05;pointer-events:none}
+  .plate h3{font-family:"Fraunces",serif;font-weight:400;font-size:1.5rem;margin:.1rem 0 .7rem;color:#efece2;position:relative}
+  .plate p{color:#bdb9ad;font-size:1rem;margin:0 0 1rem;position:relative}
+  .plate p:last-child{margin-bottom:0}
+  .plate a{color:#d98a73;border-bottom-color:rgba(217,138,115,.4)}
+  .plate .red{color:#d98a73;font-weight:500}
+
+  footer{padding:54px 0 70px;border-top:1px solid var(--hair);text-align:center}
+  footer p{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.13em;
+    text-transform:uppercase;color:var(--slate);margin:0 0 .5rem;line-height:1.9}
+
+  @keyframes rise{to{opacity:1;transform:none}}
+  @keyframes ink{to{opacity:1;transform:scale(1)}}
+  .hero .eyebrow,.hero-name,.tagline,.stamp{opacity:0;transform:translateY(8px);animation:rise .85s cubic-bezier(.2,.7,.2,1) forwards}
+  .hero-name{animation-delay:.08s}
+  .tagline{animation-delay:.22s}
+  .stamp{animation-delay:.36s}
+  .namechop{opacity:0;transform:scale(.9);animation:ink .8s cubic-bezier(.2,.7,.2,1) .5s forwards}
+  .haiku .l{opacity:0;transform:translateY(6px);animation:rise .7s cubic-bezier(.2,.7,.2,1) forwards}
+  .haiku .l:nth-child(1){animation-delay:.62s}
+  .haiku .l:nth-child(2){animation-delay:.8s}
+  .haiku .l:nth-child(3){animation-delay:.98s}
+  .stamp .seal{opacity:0;transform:scale(.82);animation:ink .7s cubic-bezier(.2,.7,.2,1) 1.16s forwards;transform-origin:center}
+  :focus-visible{outline:2px solid var(--cinnabar);outline-offset:3px}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;opacity:1!important;transform:none!important}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="seal" viewBox="0 0 100 100">
+    <rect x="3" y="3" width="94" height="94" rx="6" fill="#A8392B"/>
+    <path d="M67 28 C40 16, 22 36, 24 58 C26 80, 56 86, 71 70 C76 64, 78 56, 76 49"
+      fill="none" stroke="#E9E5DA" stroke-width="6.5" stroke-linecap="round"/>
+  </symbol>
+</svg>
+
+<div class="wrap">
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <div class="hero-ghost" aria-hidden="true">句</div>
+    <p class="eyebrow">A desk appliance · reads the headlines at dawn · prints a haiku</p>
+    <div class="hero-name">
+      <h1 class="wordmark">Hokku<span class="dot">.</span></h1>
+      <div class="namechop" aria-hidden="true">
+        <span class="v">発句</span>
+        <span class="gloss">hokku · the opening verse</span>
+      </div>
+    </div>
+    <p class="tagline">No button, no app, and — as it turns out — no new computer. Each morning the day's news is distilled to seventeen syllables and printed in ink that stays, on a board you already own.</p>
+
+    <div class="stamp">
+      <div>
+        <p class="haiku">
+          <span class="l">Grey wires hum at dawn—</span>
+          <span class="l">a thousand headlines fold down</span>
+          <span class="l">to three quiet lines.</span>
+        </p>
+        <div class="stamp-foot">
+          <svg class="seal"><use href="#seal"/></svg>
+          <span class="cap">Illustrative output · stamped at first light</span>
+        </div>
+      </div>
+      <div class="counts" aria-hidden="true"><span>5</span><span>7</span><span>5</span></div>
+    </div>
+  </header>
+
+  <!-- ============ THE IDEA ============ -->
+  <section>
+    <div class="shead">
+      <div class="chop"><span class="box"><span class="kanji">間</span></span><span class="gloss">ma · the space between</span></div>
+      <div class="col">
+        <p class="eyebrow">The idea</p>
+        <h2 class="title">A broadsheet is loud. A haiku is the opposite of a broadsheet.</h2>
+      </div>
+    </div>
+    <p class="lede">A small computer — most likely one you already own — sits on the shelf with a panel of electronic paper and no controls at all. On a schedule you set — say seven each morning — it gathers today's headlines, weighs the mood of the day, and writes one original haiku, three lines, 5·7·5, that catches not the headlines but the <em>feeling</em> of the morning. It prints the verse in black with a seal in red, and it's simply there when you come down — the way the paper used to be.</p>
+    <p>The reading happens on the board now, not over the wire. <code>hokku.py</code> pulls a handful of items from three RSS feeds — BBC News, Sky News, The Guardian — using nothing heavier than the standard library's XML parser, then pastes those headlines straight into the prompt as plain text. The call to the <a href="https://docs.claude.com/en/api/overview">Messages API</a> that follows is a single flat-rate completion — no tools switched on, no agentic search. Claude composes from what it's handed rather than going and fetching it itself. With the button gone there's nothing to connect and nothing to solder: a small screen, an afternoon, and a quad-core Pi that's been idle in a drawer since 2020.</p>
+
+    <div class="duet">
+      <div class="noise" aria-hidden="true">
+        <b>// RSS headlines, ~7am</b>
+        <span>RATES HELD AS GROWTH STALLS…</span>
+        <span>MINISTER FACES CALLS TO QUIT…</span>
+        <span>STORM WARNINGS ACROSS NORTH…</span>
+        <span>£4BN DEAL COLLAPSES OVERNIGHT…</span>
+        <span>NHS WAITING LISTS AT RECORD…</span>
+        <span>TRANSFER SAGA RUMBLES ON…</span>
+        <span>HEATWAVE? NOT THIS WEEKEND…</span>
+        <span>SHARES SLIDE ON TECH JITTERS…</span>
+      </div>
+      <div class="arrow"><svg class="seal" style="width:34px;height:34px"><use href="#seal"/></svg></div>
+      <div class="signal">Held breath over rates—<br>the north leans into the wind,<br>someone packs a box.</div>
+    </div>
+    <p class="small" style="margin-top:14px">Noise in, signal out. The verse on the right is the kind of thing the device produces from the morning on the left — it reads <em>across</em> the day rather than reciting any one headline.</p>
+  </section>
+
+  <!-- ============ THE BUILD / REUSE ============ -->
+  <section>
+    <div class="shead">
+      <div class="chop"><span class="box"><span class="kanji">再</span></span><span class="gloss">sai · again, anew</span></div>
+      <div class="col">
+        <p class="eyebrow">What it takes</p>
+        <h2 class="title">A second life for a board you already have</h2>
+      </div>
+    </div>
+    <p class="lede">The first plan called for a brand-new Raspberry Pi Zero 2 W. Then they sold out everywhere — and besides, the least wasteful machine is the one already in the drawer. A <strong>Raspberry Pi 3 Model A+</strong>, boxed since 2020, has a 40-pin header, onboard Wi-Fi, and four idle cores. For an errand it runs once a morning, it is gloriously over-qualified. So this build reuses what you have. The one thing you buy is the page.</p>
+
+    <table>
+      <caption>Bill of materials · mostly things you own</caption>
+      <thead>
+        <tr><th scope="col">Part</th><th scope="col">Why</th><th scope="col" class="num">£ inc. VAT</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="part">Raspberry Pi 3 Model A+ <span class="part-note">already yours · since 2020</span></td>
+          <td>The brain. Quad-core, onboard Wi-Fi, 40-pin header the pHAT seats straight onto. It does this in its sleep.</td>
+          <td class="num kept">0.00</td>
+        </tr>
+        <tr>
+          <td class="part">Inky pHAT <span class="part-note">250×122, four-colour e-paper</span></td>
+          <td>The page — and the one thing you actually buy. Plugs straight on, ribbon-attached, no soldering. <strong>The red prints the seal.</strong> <span class="part-note">A red/black/white version is ~£22 if you don't need yellow.</span></td>
+          <td class="num">~25.00</td>
+        </tr>
+        <tr>
+          <td class="part">microSD card, 32 GB <span class="part-note">likely already yours</span></td>
+          <td>The disk. If you flashed Pi OS onto one years ago, reuse it. Pi OS Lite needs little.</td>
+          <td class="num kept">0.00 <span class="part-note">~7 new</span></td>
+        </tr>
+        <tr>
+          <td class="part">micro-USB PSU <span class="part-note">likely already yours</span></td>
+          <td>Clean 5 V. The 2020 board's own supply still does the job; leave it plugged in for the morning refresh.</td>
+          <td class="num kept">0.00 <span class="part-note">~8 new</span></td>
+        </tr>
+        <tr>
+          <td class="part">Case <span class="part-note">it's already wearing one</span></td>
+          <td>From the smoke-grey shell it came home in. A heatsink is optional — the 3A+ idles cool and a daily call barely warms it.</td>
+          <td class="num kept">0.00</td>
+        </tr>
+        <tr class="total">
+          <td class="part">Total</td>
+          <td>The price of a screen, and not a penny more if the rest is in the drawer.</td>
+          <td class="num">≈ 25.00</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="mottai">
+      <div class="vchop" aria-hidden="true">
+        <span class="v">勿体無</span>
+        <span class="gloss">mottainai · what a waste</span>
+      </div>
+      <div>
+        <p>There's a word in Japanese for the small grief of letting a usable thing go to waste — <em>mottainai</em>. And a craft, <em>kintsugi</em>, that mends a broken bowl with gold so its history is shown rather than hidden, the repair becoming the most honest part of the object.</p>
+        <p>Hokku is neither broken nor mended. But it runs on the same instinct: a capable little machine, dark for five years, given a quiet daily purpose instead of a landfill. The cheapest build and the least wasteful one turn out to be the same build.</p>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <p class="eyebrow" style="margin-bottom:.7rem">A note on the board</p>
+      <h3>The compute is featherweight <span class="pill">flat-rate · one completion</span></h3>
+      <p class="small" style="margin-bottom:0">The board does three small things: pull a few RSS items, send one completion request, ink the result. An earlier version let Claude browse the front pages itself, agentic search switched on — it read beautifully, and ran up about £6 in a single day of testing, billed per search. RSS injection costs the same flat rate every morning. Either way, a five-year-old quad-core Pi is wild overkill for the job — and exactly why reusing one costs nothing and wastes nothing.</p>
+    </div>
+  </section>
+
+  <!-- ============ HOW A MORNING GOES ============ -->
+  <section>
+    <div class="shead">
+      <div class="chop"><span class="box"><span class="kanji">流</span></span><span class="gloss">nagare · the flow</span></div>
+      <div class="col">
+        <p class="eyebrow">How a morning goes</p>
+        <h2 class="title">Five quiet steps, once a day, then silence</h2>
+      </div>
+    </div>
+    <ol class="flow">
+      <li>
+        <h4>The clock wakes it</h4>
+        <p>A single <code>cron</code> line fires at the hour you chose. There's no daemon humming all day — the script runs, finishes, and the board goes back to idle.</p>
+      </li>
+      <li>
+        <h4>It gathers the headlines</h4>
+        <p>Three RSS feeds — BBC News, Sky News, The Guardian — parsed with nothing heavier than the standard library's <code>xml.etree</code>. A handful of titles from each, no scraping, no extra dependency.</p>
+      </li>
+      <li>
+        <h4>It asks Claude to compose</h4>
+        <p>The headlines are pasted into the prompt as plain text and sent as a single completion — no tools, no browsing, no per-search billing. Claude weighs the mood of what it's been handed and writes.</p>
+      </li>
+      <li>
+        <h4>Three lines come back</h4>
+        <p>The response is parsed for the text blocks; out falls a fresh haiku, never the same twice, caught from the feeling of the morning rather than any one headline.</p>
+      </li>
+      <li>
+        <h4>The pHAT inks it</h4>
+        <p>The verse is laid out in black, the seal stamped in red, and pushed to the e-paper. A few seconds of refresh, and it's there until tomorrow.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ============ UNDER THE HOOD ============ -->
+  <section>
+    <div class="shead">
+      <div class="chop"><span class="box"><span class="kanji">機</span></span><span class="gloss">ki · the mechanism</span></div>
+      <div class="col">
+        <p class="eyebrow">Under the hood</p>
+        <h2 class="title">It clicks together, no iron required</h2>
+      </div>
+    </div>
+    <p>The 3A+ ships with its 40-pin header already soldered, so the Inky pHAT seats onto it and the device is complete. The panel only borrows a handful of those forty lines; the rest are along for the ride.</p>
+
+    <div class="pinmap" aria-hidden="false">
+40-pin header — the pHAT seats on all of it,
+but only a few lines do any work:
+
+  <span class="pin">SPI</span>   GPIO10 / GPIO11 / GPIO8     → pixels to the panel
+  <span class="pin">GPIO</span>  RESET 27 · BUSY 17 · DC 22  → the refresh handshake
+  <span class="pin">I²C</span>   GPIO2 / GPIO3                → reads the pHAT's EEPROM, IDs the panel variant
+  <span class="pin">PWR</span>   3V3 · 5V · GND               → power
+
+No jumper wires. No breadboard. It just presses down.
+    </div>
+
+    <ul class="stacklist">
+      <li><span class="role">Board</span><span class="what"><b>Raspberry Pi 3 Model A+</b> — quad-core, onboard Wi-Fi, 40-pin. Reused, not bought.</span></li>
+      <li><span class="role">Page</span><span class="what"><b>Inky pHAT</b> — 250×122, four-colour e-paper (EEPROM variant 23, <code>InkyJD79661</code> driver). Red ink for the seal.</span></li>
+      <li><span class="role">Feed</span><span class="what"><b>RSS</b> — BBC News, Sky News, The Guardian. Parsed with the standard library, no scraping.</span></li>
+      <li><span class="role">Brain</span><span class="what"><b>Claude Opus 4.8 · Messages API</b> — one flat-rate completion, no tools. The restraint is in <code>max_tokens</code>, not the model — the same instinct as the board: full capability, deliberately given a small job.</span></li>
+      <li><span class="role">Clock</span><span class="what"><b>cron</b> — one wake a day, then the board sleeps.</span></li>
+      <li><span class="role">Keys</span><span class="what"><b>/etc/hokku.env</b> — the API key, sourced at run, never in the repo.</span></li>
+    </ul>
+  </section>
+
+  <!-- ============ THE ONE-SHOT ============ -->
+  <section>
+    <div class="shead">
+      <div class="chop"><span class="box"><span class="kanji">書</span></span><span class="gloss">sho · to write</span></div>
+      <div class="col">
+        <p class="eyebrow">The one-shot</p>
+        <h2 class="title">Read the morning, print a haiku, exit</h2>
+      </div>
+    </div>
+    <p>No framework, no agent loop on the board — a clean script that runs top to bottom and stops. Three small pieces: the key, the script, the schedule.</p>
+
+    <div class="code">
+      <span class="h">/etc/hokku.env — read at run, never committed</span>
+<pre><span class="c"># sourced by the one-shot; kept out of the repo</span>
+ANTHROPIC_API_KEY=sk-ant-...
+HOKKU_MODEL=claude-opus-4-8</pre>
+    </div>
+
+    <div class="code">
+      <span class="h">hokku.py — gather, compose, ink, exit</span>
+<pre><span class="c">#!/usr/bin/env python3</span>
+<span class="k">import</span> os, requests
+<span class="k">import</span> xml.etree.ElementTree <span class="k">as</span> ET
+<span class="k">from</span> inky.auto <span class="k">import</span> auto
+
+FEEDS = {
+    <span class="s">"BBC News"</span>:     <span class="s">"http://feeds.bbci.co.uk/news/rss.xml"</span>,
+    <span class="s">"Sky News"</span>:     <span class="s">"https://feeds.skynews.com/feeds/rss/home.xml"</span>,
+    <span class="s">"The Guardian"</span>: <span class="s">"https://www.theguardian.com/uk/rss"</span>,
+}
+
+<span class="k">def</span> <span class="fn">fetch_headlines</span>(limit=8):
+    titles = []
+    <span class="k">for</span> name, url <span class="k">in</span> FEEDS.items():
+        root = ET.<span class="fn">fromstring</span>(requests.<span class="fn">get</span>(url, timeout=10).content)
+        titles += [item.<span class="fn">findtext</span>(<span class="s">"title"</span>) <span class="k">for</span> item <span class="k">in</span> root.<span class="fn">iter</span>(<span class="s">"item"</span>)][:limit]
+    <span class="k">return</span> [t <span class="k">for</span> t <span class="k">in</span> titles <span class="k">if</span> t]
+
+headlines = <span class="fn">fetch_headlines</span>()
+
+prompt = (
+    <span class="s">"Here are today's UK headlines:\n"</span>
+    + <span class="s">"\n"</span>.<span class="fn">join</span>(<span class="s">"- "</span> + h <span class="k">for</span> h <span class="k">in</span> headlines)
+    + <span class="s">"\n\nWrite ONE original haiku, three lines 5-7-5, that catches "</span>
+      <span class="s">"the mood of the morning — not any single headline. "</span>
+      <span class="s">"Reply with the three lines only."</span>
+)
+
+r = requests.<span class="fn">post</span>(
+    <span class="s">"https://api.anthropic.com/v1/messages"</span>,
+    headers={
+        <span class="s">"x-api-key"</span>: os.environ[<span class="s">"ANTHROPIC_API_KEY"</span>],
+        <span class="s">"anthropic-version"</span>: <span class="s">"2023-06-01"</span>,
+        <span class="s">"content-type"</span>: <span class="s">"application/json"</span>,
+    },
+    json={
+        <span class="s">"model"</span>: os.environ.<span class="fn">get</span>(<span class="s">"HOKKU_MODEL"</span>, <span class="s">"claude-opus-4-8"</span>),
+        <span class="s">"max_tokens"</span>: 300,           <span class="c"># the restraint is here, not in the model</span>
+        <span class="s">"messages"</span>: [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}],
+    },
+    timeout=30,
+)
+r.<span class="fn">raise_for_status</span>()
+text = <span class="s">""</span>.<span class="fn">join</span>(b[<span class="s">"text"</span>] <span class="k">for</span> b <span class="k">in</span> r.<span class="fn">json</span>()[<span class="s">"content"</span>] <span class="k">if</span> b[<span class="s">"type"</span>] == <span class="s">"text"</span>)
+lines = [l <span class="k">for</span> l <span class="k">in</span> text.<span class="fn">strip</span>().<span class="fn">splitlines</span>() <span class="k">if</span> l.<span class="fn">strip</span>()]
+haiku = <span class="s">"\n"</span>.<span class="fn">join</span>(lines[-3:])   <span class="c"># last 3 non-empty lines — Claude sometimes adds a preamble</span>
+
+<span class="c"># ---- ink it: palette-mode image, black text, red seal, then refresh ----</span>
+display = <span class="fn">auto</span>()
+img = render(haiku, display.width, display.height)   <span class="c"># auto-fit font, "P"-mode fast path</span>
+display.<span class="fn">set_image</span>(img)
+display.<span class="fn">show</span>()</pre>
+    </div>
+
+    <div class="code">
+      <span class="h">/etc/cron.d/hokku — 07:00, every day</span>
+<pre><span class="c"># wake · gather · compose · ink — source the env, then run once</span>
+0 7 * * *  pi  /usr/bin/env bash -c <span class="s">'set -a; . /etc/hokku.env; set +a; \
+                  /usr/bin/python3 /home/pi/hokku.py'</span></pre>
+    </div>
+    <p class="small">The render step is left to taste — three lines of Fraunces and a red seal carrying the kanji <span lang="ja">朝</span> ("morning") in yellow is the house style, but the panel is yours to letter however you like.</p>
+  </section>
+
+  <!-- ============ HONEST NOTES ============ -->
+  <section>
+    <div class="shead">
+      <div class="chop"><span class="box"><span class="kanji">注</span></span><span class="gloss">chū · take note</span></div>
+      <div class="col">
+        <p class="eyebrow">Honest notes</p>
+        <h2 class="title">What to expect, plainly</h2>
+      </div>
+    </div>
+    <div class="caveat">
+      <h4>It needs the network</h4>
+      <p>Onboard Wi-Fi must be in range at the appointed hour, for both the RSS pulls and the API call. If a morning's request fails, leave yesterday's verse on the panel rather than a blank — a stale haiku reads better than an error.</p>
+    </div>
+    <div class="caveat">
+      <h4>It asks, it doesn't browse</h4>
+      <p>An earlier version let Claude fetch the front pages itself, agentic search switched on. It read beautifully and cost real money — about £6 in a single day of testing, billed per search. Headlines pasted in as plain context and a flat-rate completion write just as well, for a predictable price.</p>
+    </div>
+    <div class="caveat">
+      <h4>Old Pi, old Python</h4>
+      <p>System Python on this board is 3.7, which the e-paper library's newer GPIO dependency doesn't support — so <code>hokku.py</code> carries a small compatibility shim. It works; the only visible trace is a harmless warning some mornings while the display finishes refreshing.</p>
+    </div>
+    <div class="caveat">
+      <h4>E-paper is slow, and that's the point</h4>
+      <p>A refresh takes a few seconds and flickers as it settles. Then it costs nothing to hold — which for a thing you read once at breakfast is exactly right.</p>
+    </div>
+    <div class="caveat">
+      <h4>Every morning is new</h4>
+      <p>The haiku is generated fresh each day, so it's never the same twice and never quite predictable. Treat that as the feature it is.</p>
+    </div>
+  </section>
+
+  <!-- ============ THE INK THAT STAYS ============ -->
+  <section>
+    <div class="plate">
+      <span class="pk" aria-hidden="true">紙</span>
+      <h3>The ink that stays</h3>
+      <p>Electronic paper holds its image with the power pulled. The verse you read at breakfast is still there at dusk, and would still be there if the plug came out — the panel only draws current to <span class="red">change</span>, never to hold.</p>
+      <p>Nothing is spent keeping the morning in view. It is the most patient screen ever made, and close to the least wasteful — the nearest a display comes to actual ink on actual paper, sitting on a board that itself refused to be thrown away.</p>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer>
+    <p>Hokku · 発句 · the opening verse</p>
+    <p>Raspberry Pi 3 Model A+ (reused) · Inky pHAT · Claude Opus 4.8</p>
+    <p>≈ £25 · an afternoon · seventeen syllables a day</p>
+  </footer>
+
+</div>
+
+</body>
+</html>
