@@ -95,6 +95,11 @@
     letter-spacing:.08em;text-transform:uppercase;color:var(--cinnabar)}
   .tagline{font-size:clamp(1.05rem,2.4vw,1.32rem);color:#34353b;max-width:36ch;margin:1.4rem 0 0}
 
+  .hero-shot{margin:34px 0 0;padding:0}
+  .hero-shot img{display:block;width:100%;height:auto;border:1px solid var(--hair)}
+  .hero-shot figcaption{margin-top:10px;font-family:"IBM Plex Mono",monospace;font-size:11px;
+    letter-spacing:.06em;color:var(--slate);text-align:center}
+
   .stamp{
     margin:46px 0 6px;display:grid;grid-template-columns:1fr auto;gap:30px;align-items:start;
     padding:34px 36px;background:rgba(255,255,255,.34);border:1px solid var(--hair);
@@ -219,10 +224,11 @@
 
   @keyframes rise{to{opacity:1;transform:none}}
   @keyframes ink{to{opacity:1;transform:scale(1)}}
-  .hero .eyebrow,.hero-name,.tagline,.stamp{opacity:0;transform:translateY(8px);animation:rise .85s cubic-bezier(.2,.7,.2,1) forwards}
+  .hero .eyebrow,.hero-name,.tagline,.hero-shot,.stamp{opacity:0;transform:translateY(8px);animation:rise .85s cubic-bezier(.2,.7,.2,1) forwards}
   .hero-name{animation-delay:.08s}
   .tagline{animation-delay:.22s}
-  .stamp{animation-delay:.36s}
+  .hero-shot{animation-delay:.3s}
+  .stamp{animation-delay:.44s}
   .namechop{opacity:0;transform:scale(.9);animation:ink .8s cubic-bezier(.2,.7,.2,1) .5s forwards}
   .haiku .l{opacity:0;transform:translateY(6px);animation:rise .7s cubic-bezier(.2,.7,.2,1) forwards}
   .haiku .l:nth-child(1){animation-delay:.62s}
@@ -257,6 +263,11 @@
       </div>
     </div>
     <p class="tagline">No button, no app, and — as it turns out — no new computer. Each morning the day's news is distilled to seventeen syllables and printed in ink that stays, on a board you already own.</p>
+
+    <figure class="hero-shot">
+      <img src="images/hokku-inky-phat-zen.jpg" alt="An Inky pHAT e-paper display, seated on a Raspberry Pi, showing a printed haiku beside a red seal, set in a raked-sand zen garden" width="1600" height="1205" loading="eager">
+      <figcaption class="small">The Inky pHAT, inked and set down for the morning.</figcaption>
+    </figure>
 
     <div class="stamp">
       <div>
