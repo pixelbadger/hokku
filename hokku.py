@@ -119,7 +119,8 @@ for _sub in ("errors", "platform"):
 sys.modules["gpiodevice"] = _gpiodev
 
 # ── now safe to import inky ───────────────────────────────────────────────────
-import os, requests
+import os, json
+import urllib.request
 import xml.etree.ElementTree as ET
 from PIL import Image, ImageDraw, ImageFont
 from inky.auto import auto
@@ -146,9 +147,10 @@ SEAL_KANJI = "朝"  # "morning" — the seal marks the daily ritual
 
 def fetch_headlines(url, limit=8):
     """Return up to `limit` <item><title> values from an RSS feed."""
-    resp = requests.get(url, timeout=15)
-    resp.raise_for_status()
-    root = ET.fromstring(resp.content)
+    req = urllib.request.Request(url, headers={"User-Agent": "hokku/1.0"})
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        data = resp.read()
+    root = ET.fromstring(data)
     titles = [item.findtext("title", "").strip() for item in root.findall(".//item")]
     return [t for t in titles if t][:limit]
 
@@ -222,25 +224,28 @@ prompt = (
     "Output only the three lines of the haiku — no title, no preamble, no explanation."
 )
 
-r = requests.post(
+body = json.dumps({
+    "model":      os.environ.get("HOKKU_MODEL", "claude-opus-4-8"),
+    "max_tokens": 300,
+    "messages":   [{"role": "user", "content": prompt}],
+}).encode("utf-8")
+
+req = urllib.request.Request(
     "https://api.anthropic.com/v1/messages",
+    data=body,
+    method="POST",
     headers={
         "x-api-key":         os.environ["ANTHROPIC_API_KEY"],
         "anthropic-version": "2023-06-01",
         "content-type":      "application/json",
     },
-    json={
-        "model":      os.environ.get("HOKKU_MODEL", "claude-opus-4-8"),
-        "max_tokens": 300,
-        "messages":   [{"role": "user", "content": prompt}],
-    },
-    timeout=120,
 )
-r.raise_for_status()
-haiku_raw = "\n".join(b["text"] for b in r.json()["content"] if b["type"] == "text").strip()
+with urllib.request.urlopen(req, timeout=120) as resp:
+    payload = json.loads(resp.read())
+haiku_raw = "\n".join(b["text"] for b in payload["content"] if b["type"] == "text").strip()
 
 if not haiku_raw:
-    raise RuntimeError("no text in response; stop_reason={}".format(r.json().get("stop_reason")))
+    raise RuntimeError("no text in response; stop_reason={}".format(payload.get("stop_reason")))
 
 lines = [l.strip() for l in haiku_raw.splitlines() if l.strip()]
 haiku = "\n".join(lines[-3:])

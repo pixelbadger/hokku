@@ -463,7 +463,8 @@ HOKKU_MODEL=claude-opus-4-8</pre>
     <div class="code">
       <span class="h">hokku.py — gather, compose, ink, exit</span>
 <pre><span class="c">#!/usr/bin/env python3</span>
-<span class="k">import</span> os, requests
+<span class="k">import</span> os, json
+<span class="k">import</span> urllib.request
 <span class="k">import</span> xml.etree.ElementTree <span class="k">as</span> ET
 <span class="k">from</span> inky.auto <span class="k">import</span> auto
 
@@ -476,7 +477,9 @@ FEEDS = {
 <span class="k">def</span> <span class="fn">fetch_headlines</span>(limit=8):
     titles = []
     <span class="k">for</span> name, url <span class="k">in</span> FEEDS.items():
-        root = ET.<span class="fn">fromstring</span>(requests.<span class="fn">get</span>(url, timeout=10).content)
+        req = urllib.request.<span class="fn">Request</span>(url, headers={<span class="s">"User-Agent"</span>: <span class="s">"hokku/1.0"</span>})
+        <span class="k">with</span> urllib.request.<span class="fn">urlopen</span>(req, timeout=10) <span class="k">as</span> resp:
+            root = ET.<span class="fn">fromstring</span>(resp.<span class="fn">read</span>())
         titles += [item.<span class="fn">findtext</span>(<span class="s">"title"</span>) <span class="k">for</span> item <span class="k">in</span> root.<span class="fn">iter</span>(<span class="s">"item"</span>)][:limit]
     <span class="k">return</span> [t <span class="k">for</span> t <span class="k">in</span> titles <span class="k">if</span> t]
 
@@ -490,22 +493,24 @@ prompt = (
       <span class="s">"Reply with the three lines only."</span>
 )
 
-r = requests.<span class="fn">post</span>(
+body = json.<span class="fn">dumps</span>({
+    <span class="s">"model"</span>: os.environ.<span class="fn">get</span>(<span class="s">"HOKKU_MODEL"</span>, <span class="s">"claude-opus-4-8"</span>),
+    <span class="s">"max_tokens"</span>: 300,           <span class="c"># the restraint is here, not in the model</span>
+    <span class="s">"messages"</span>: [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}],
+}).<span class="fn">encode</span>()
+
+req = urllib.request.<span class="fn">Request</span>(
     <span class="s">"https://api.anthropic.com/v1/messages"</span>,
+    data=body,
     headers={
         <span class="s">"x-api-key"</span>: os.environ[<span class="s">"ANTHROPIC_API_KEY"</span>],
         <span class="s">"anthropic-version"</span>: <span class="s">"2023-06-01"</span>,
         <span class="s">"content-type"</span>: <span class="s">"application/json"</span>,
     },
-    json={
-        <span class="s">"model"</span>: os.environ.<span class="fn">get</span>(<span class="s">"HOKKU_MODEL"</span>, <span class="s">"claude-opus-4-8"</span>),
-        <span class="s">"max_tokens"</span>: 300,           <span class="c"># the restraint is here, not in the model</span>
-        <span class="s">"messages"</span>: [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}],
-    },
-    timeout=30,
 )
-r.<span class="fn">raise_for_status</span>()
-text = <span class="s">""</span>.<span class="fn">join</span>(b[<span class="s">"text"</span>] <span class="k">for</span> b <span class="k">in</span> r.<span class="fn">json</span>()[<span class="s">"content"</span>] <span class="k">if</span> b[<span class="s">"type"</span>] == <span class="s">"text"</span>)
+<span class="k">with</span> urllib.request.<span class="fn">urlopen</span>(req, timeout=30) <span class="k">as</span> resp:
+    payload = json.<span class="fn">loads</span>(resp.<span class="fn">read</span>())
+text = <span class="s">""</span>.<span class="fn">join</span>(b[<span class="s">"text"</span>] <span class="k">for</span> b <span class="k">in</span> payload[<span class="s">"content"</span>] <span class="k">if</span> b[<span class="s">"type"</span>] == <span class="s">"text"</span>)
 lines = [l <span class="k">for</span> l <span class="k">in</span> text.<span class="fn">strip</span>().<span class="fn">splitlines</span>() <span class="k">if</span> l.<span class="fn">strip</span>()]
 haiku = <span class="s">"\n"</span>.<span class="fn">join</span>(lines[-3:])   <span class="c"># last 3 non-empty lines — Claude sometimes adds a preamble</span>
 
