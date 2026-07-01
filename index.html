@@ -541,7 +541,7 @@ display.<span class="fn">show</span>()</pre>
     </div>
     <div class="caveat">
       <h4>It needs the network</h4>
-      <p>Onboard Wi-Fi must be in range at the appointed hour, for both the RSS pulls and the API call. If a morning's request fails, leave yesterday's verse on the panel rather than a blank — a stale haiku reads better than an error.</p>
+      <p>Onboard Wi-Fi must be in range at the appointed hour, for both the RSS pulls and the API call. If a morning's request fails, the script exits before it ever touches the panel — no partial render, no error screen, just a line in the log. The e-paper only draws current to change, so a failed morning costs nothing and simply leaves yesterday's verse up a day longer.</p>
     </div>
     <div class="caveat">
       <h4>It asks, it doesn't browse</h4>

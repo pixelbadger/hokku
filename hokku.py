@@ -7,7 +7,8 @@ stubs for both `gpiod` and `gpiodevice` before inky is imported.
 """
 
 # ── gpiod / gpiodevice stubs ─────────────────────────────────────────────────
-import sys, types, time
+import sys
+import types, time
 from datetime import timedelta
 import RPi.GPIO as GPIO
 
@@ -210,49 +211,54 @@ def render(haiku, display, width, height):
     return img
 
 
-# ── fetch this morning's headlines, then ask Claude for a haiku ─────────────
-context = "\n\n".join(
-    source + ":\n" + "\n".join("- " + t for t in fetch_headlines(url))
-    for source, url in FEEDS.items()
-)
+# ── fetch, compose, render — any failure here exits before the panel is touched ──
+try:
+    context = "\n\n".join(
+        source + ":\n" + "\n".join("- " + t for t in fetch_headlines(url))
+        for source, url in FEEDS.items()
+    )
 
-prompt = (
-    "Here are this morning's top UK headlines.\n\n"
-    + context +
-    "\n\nWrite ONE original haiku, three lines 5-7-5, that catches "
-    "the mood of the morning — not any single headline. "
-    "Output only the three lines of the haiku — no title, no preamble, no explanation."
-)
+    prompt = (
+        "Here are this morning's top UK headlines.\n\n"
+        + context +
+        "\n\nWrite ONE original haiku, three lines 5-7-5, that catches "
+        "the mood of the morning — not any single headline. "
+        "Output only the three lines of the haiku — no title, no preamble, no explanation."
+    )
 
-body = json.dumps({
-    "model":      os.environ.get("HOKKU_MODEL", "claude-opus-4-8"),
-    "max_tokens": 300,
-    "messages":   [{"role": "user", "content": prompt}],
-}).encode("utf-8")
+    body = json.dumps({
+        "model":      os.environ.get("HOKKU_MODEL", "claude-opus-4-8"),
+        "max_tokens": 300,
+        "messages":   [{"role": "user", "content": prompt}],
+    }).encode("utf-8")
 
-req = urllib.request.Request(
-    "https://api.anthropic.com/v1/messages",
-    data=body,
-    method="POST",
-    headers={
-        "x-api-key":         os.environ["ANTHROPIC_API_KEY"],
-        "anthropic-version": "2023-06-01",
-        "content-type":      "application/json",
-    },
-)
-with urllib.request.urlopen(req, timeout=120) as resp:
-    payload = json.loads(resp.read())
-haiku_raw = "\n".join(b["text"] for b in payload["content"] if b["type"] == "text").strip()
+    req = urllib.request.Request(
+        "https://api.anthropic.com/v1/messages",
+        data=body,
+        method="POST",
+        headers={
+            "x-api-key":         os.environ["ANTHROPIC_API_KEY"],
+            "anthropic-version": "2023-06-01",
+            "content-type":      "application/json",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        payload = json.loads(resp.read())
+    haiku_raw = "\n".join(b["text"] for b in payload["content"] if b["type"] == "text").strip()
 
-if not haiku_raw:
-    raise RuntimeError("no text in response; stop_reason={}".format(payload.get("stop_reason")))
+    if not haiku_raw:
+        raise RuntimeError("no text in response; stop_reason={}".format(payload.get("stop_reason")))
 
-lines = [l.strip() for l in haiku_raw.splitlines() if l.strip()]
-haiku = "\n".join(lines[-3:])
+    lines = [l.strip() for l in haiku_raw.splitlines() if l.strip()]
+    haiku = "\n".join(lines[-3:])
+
+    display = auto()
+    img = render(haiku, display, display.width, display.height)
+except Exception as exc:
+    print(f"hokku: failed to compose this morning's haiku: {exc}", file=sys.stderr)
+    sys.exit(1)
+
+# ── ink it — the only calls that touch the panel, reached only on success ──
 print(haiku)
-
-# ── render and ink ────────────────────────────────────────────────────────────
-display = auto()
-img = render(haiku, display, display.width, display.height)
 display.set_image(img)
 display.show()
