@@ -129,7 +129,7 @@
   .arrow{width:46px;height:46px;display:flex;align-items:center;justify-content:center}
 
   /* ============ tables ============ */
-  table{width:100%;border-collapse:collapse;font-size:.96rem}
+  table{width:100%;border-collapse:collapse;font-size:.96rem;margin-top:44px}
   caption{text-align:left;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;
     text-transform:uppercase;color:var(--slate);padding:0 0 10px}
   th,td{padding:11px 6px;text-align:left;border-bottom:1px solid var(--hair);vertical-align:top}
@@ -215,6 +215,13 @@
   footer{padding:54px 0 70px;border-top:1px solid var(--hair);text-align:center}
   footer p{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.13em;
     text-transform:uppercase;color:var(--slate);margin:0 0 .5rem;line-height:1.9}
+
+  /* ============ full photo ============ */
+  .photo-full{padding:62px 0;border-top:1px solid var(--hair)}
+  .photo-full figure{margin:0}
+  .photo-full img{display:block;width:100%;height:auto;border:1px solid var(--hair)}
+  .photo-full figcaption{margin-top:12px;font-family:"IBM Plex Mono",monospace;font-size:11px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--slate)}
 
   @keyframes rise{to{opacity:1;transform:none}}
   @keyframes ink{to{opacity:1;transform:scale(1)}}
@@ -557,6 +564,14 @@ display.<span class="fn">show</span>()</pre>
       <p>Electronic paper holds its image with the power pulled. The verse you read at breakfast is still there at dusk, and would still be there if the plug came out — the panel only draws current to <span class="red">change</span>, never to hold.</p>
       <p>Nothing is spent keeping the morning in view. It is the most patient screen ever made, and close to the least wasteful — the nearest a display comes to actual ink on actual paper, sitting on a board that itself refused to be thrown away.</p>
     </div>
+  </section>
+
+  <!-- ============ THE OBJECT ITSELF ============ -->
+  <section class="photo-full">
+    <figure>
+      <img src="images/hokku-inky-phat-zen.jpg" alt="The finished Hokku on a desk: a Raspberry Pi in a smoke-grey case with the Inky pHAT on top, the morning's haiku printed on the e-paper display" width="1600" height="1205" loading="lazy">
+      <figcaption>The object itself · the morning's verse, held in ink</figcaption>
+    </figure>
   </section>
 
   <!-- ============ FOOTER ============ -->
