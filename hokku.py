@@ -9,7 +9,7 @@ stubs for both `gpiod` and `gpiodevice` before inky is imported.
 # ── gpiod / gpiodevice stubs ─────────────────────────────────────────────────
 import sys
 import types, time
-from datetime import timedelta
+from datetime import datetime, timedelta
 import RPi.GPIO as GPIO
 
 GPIO.setmode(GPIO.BCM)
@@ -207,6 +207,15 @@ def render(haiku, display, width, height):
         kx = seal_left + (ss - kw) // 2 - bbox[0]
         ky = seal_top + (ss - kh) // 2 - bbox[1]
         draw.text((kx, ky), SEAL_KANJI, fill=YELLOW, font=kanji_font)
+
+    # date — smallest legible size, aligned with the seal, printed once at composition
+    date_str = datetime.now().strftime("%-d %b")
+    date_font = ImageFont.truetype(font_path, 8) if font_path else ImageFont.load_default()
+    dbbox = draw.textbbox((0, 0), date_str, font=date_font)
+    dw, dh = dbbox[2] - dbbox[0], dbbox[3] - dbbox[1]
+    dx = seal_left - mg - dw
+    dy = seal_top + (ss - dh) // 2 - dbbox[1]
+    draw.text((dx, dy), date_str, fill=BLACK, font=date_font)
 
     return img
 
