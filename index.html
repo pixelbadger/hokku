@@ -348,7 +348,7 @@
         </tr>
         <tr>
           <td class="part">Inky pHAT <span class="part-note">four-colour e-paper</span></td>
-          <td>The page — and the one thing you actually buy. <strong>The red prints the seal.</strong> <span class="part-note">A red/black/white version is ~£22 if you don't need yellow.</span></td>
+          <td>The page — and the one thing you actually buy. <strong>The red prints the seal.</strong></td>
           <td class="num">~25.00</td>
         </tr>
         <tr>
@@ -516,7 +516,7 @@ haiku = <span class="s">"\n"</span>.<span class="fn">join</span>(lines[-3:])   <
 
 <span class="c"># ---- ink it: palette-mode image, black text, red seal, then refresh ----</span>
 display = <span class="fn">auto</span>()
-img = render(haiku, display.width, display.height)   <span class="c"># auto-fit font, "P"-mode fast path</span>
+img = render(haiku, display.width, display.height)   <span class="c"># render(): your layout — see repo</span>
 display.<span class="fn">set_image</span>(img)
 display.<span class="fn">show</span>()</pre>
     </div>
