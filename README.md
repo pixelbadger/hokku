@@ -29,3 +29,26 @@ this describes how to make one.
    sudo bash -c 'set -a; . /etc/hokku.env; set +a; python3 /home/pi/hokku.py'
    sudo tail -20 /var/log/hokku.log
    ```
+
+## The gpiod/gpiodevice compatibility shim
+
+`gpiod` 2.x isn't available for Python 3.7 on armv7l, but the `inky` library's
+GPIO backend imports `gpiod` and `gpiodevice` directly. `hokku.py` works
+around this by injecting fake `gpiod`/`gpiodevice` modules into
+`sys.modules`, backed by `RPi.GPIO`, before `inky` is ever imported:
+
+```python
+# gpiod 2.x isn't available for Python 3.7 on armv7l; inky imports gpiod
+# and gpiodevice directly, so we inject RPi.GPIO-backed stand-ins first.
+import sys, types
+import RPi.GPIO as GPIO
+
+_gpiod = types.ModuleType("gpiod")
+# ... minimal Chip / LineSettings / line-request shim backed by RPi.GPIO ...
+sys.modules["gpiod"] = _gpiod
+sys.modules["gpiodevice"] = _gpiodev
+
+from inky.auto import auto  # now safe to import
+```
+
+See `hokku.py` for the full shim.
