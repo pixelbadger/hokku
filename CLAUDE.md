@@ -36,7 +36,7 @@ sshpass -p "$PI_PASSWORD" ssh -o StrictHostKeyChecking=no "$PI_USER@$PI_HOST"
 | Path | Purpose |
 |---|---|
 | `/home/pi/hokku.py` | Main script (see below) — mirrored at `hokku.py` in this repo, deploy with `scp` (see Quick test commands) |
-| `/etc/hokku.env` | `ANTHROPIC_API_KEY` + `HOKKU_MODEL=claude-haiku-4-5-20251001` — `640 root:pi` |
+| `/etc/hokku.env` | `ANTHROPIC_API_KEY` + `HOKKU_MODEL=claude-opus-4-8` — `640 root:pi` |
 | `/etc/cron.d/hokku` | Fires at `07:00` daily as `pi` user, logs to `/var/log/hokku.log` |
 
 `hokku.py` now also exists locally in this repo (it didn't before 2026-06-30 — pulled down with `scp` from the Pi). Treat the Pi as the source of truth at runtime, but edit locally and `scp` over rather than editing in place over SSH, so the repo copy doesn't drift.
