@@ -76,9 +76,13 @@
 
   /* ============ HERO ============ */
   .hero{position:relative;overflow:hidden;padding:74px 0 64px;border-top:none}
-  .hero-ghost{position:absolute;right:-3%;top:2%;font-family:"Shippori Mincho",serif;font-weight:700;
-    font-size:30rem;line-height:.8;color:var(--ink);opacity:.045;pointer-events:none;user-select:none;z-index:0}
-  @media(max-width:620px){.hero-ghost{font-size:18rem;right:-8%;top:6%}}
+  .hero .hero-photo{position:absolute;right:-5%;top:150px;width:min(42%,360px);z-index:0;
+    pointer-events:none;user-select:none}
+  .hero-photo img{display:block;width:100%;height:auto;mix-blend-mode:multiply;
+    filter:grayscale(.4) sepia(.25) contrast(.9) brightness(1.06) opacity(.75);
+    -webkit-mask-image:radial-gradient(ellipse 68% 64% at 52% 48%,#000 34%,transparent 72%);
+    mask-image:radial-gradient(ellipse 68% 64% at 52% 48%,#000 34%,transparent 72%)}
+  @media(max-width:620px){.hero .hero-photo{display:none}}
   .hero > *{position:relative;z-index:1}
   .hero .eyebrow{margin-bottom:1.4rem}
   .hero-name{display:flex;align-items:flex-end;gap:26px;flex-wrap:wrap}
@@ -94,11 +98,6 @@
   .namechop .gloss{margin-top:8px;font-family:"IBM Plex Mono",monospace;font-size:8.5px;
     letter-spacing:.08em;text-transform:uppercase;color:var(--cinnabar)}
   .tagline{font-size:clamp(1.05rem,2.4vw,1.32rem);color:#34353b;max-width:36ch;margin:1.4rem 0 0}
-
-  .hero-shot{margin:34px 0 0;padding:0}
-  .hero-shot img{display:block;width:100%;height:auto;border:1px solid var(--hair)}
-  .hero-shot figcaption{margin-top:10px;font-family:"IBM Plex Mono",monospace;font-size:11px;
-    letter-spacing:.06em;color:var(--slate);text-align:center}
 
   .stamp{
     margin:46px 0 6px;display:grid;grid-template-columns:1fr auto;gap:30px;align-items:start;
@@ -142,11 +141,6 @@
   tr.total td{border-bottom:none;border-top:1.5px solid var(--ink);font-weight:500;padding-top:13px}
   tr.total .part{font-size:1.06rem}
   td.kept{color:var(--cinnabar)}
-  .pill{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;
-    text-transform:uppercase;color:var(--cinnabar);border:1px solid var(--cinnabar);border-radius:2px;
-    padding:2px 7px;margin-left:8px;vertical-align:middle}
-  .sidebar{margin-top:34px;padding:24px 26px;background:var(--paper-2);border:1px solid var(--hair)}
-  .sidebar h3{font-family:"Fraunces",serif;font-weight:400;font-size:1.18rem;margin:.1rem 0 .5rem}
 
   /* ============ the reuse note — a quiet inset like a margin gloss ============ */
   .mottai{margin-top:34px;display:grid;grid-template-columns:54px 1fr;column-gap:24px;align-items:start}
@@ -224,10 +218,10 @@
 
   @keyframes rise{to{opacity:1;transform:none}}
   @keyframes ink{to{opacity:1;transform:scale(1)}}
-  .hero .eyebrow,.hero-name,.tagline,.hero-shot,.stamp{opacity:0;transform:translateY(8px);animation:rise .85s cubic-bezier(.2,.7,.2,1) forwards}
+  .hero .eyebrow,.hero-name,.tagline,.hero-photo,.stamp{opacity:0;transform:translateY(8px);animation:rise .85s cubic-bezier(.2,.7,.2,1) forwards}
   .hero-name{animation-delay:.08s}
   .tagline{animation-delay:.22s}
-  .hero-shot{animation-delay:.3s}
+  .hero-photo{animation-delay:.3s}
   .stamp{animation-delay:.44s}
   .namechop{opacity:0;transform:scale(.9);animation:ink .8s cubic-bezier(.2,.7,.2,1) .5s forwards}
   .haiku .l{opacity:0;transform:translateY(6px);animation:rise .7s cubic-bezier(.2,.7,.2,1) forwards}
@@ -253,7 +247,9 @@
 
   <!-- ============ HERO ============ -->
   <header class="hero">
-    <div class="hero-ghost" aria-hidden="true">句</div>
+    <div class="hero-photo" aria-hidden="true">
+      <img src="images/hokku-inky-phat-zen.jpg" alt="" width="1600" height="1205" loading="eager">
+    </div>
     <p class="eyebrow">A desk appliance · reads the headlines at dawn · prints a haiku</p>
     <div class="hero-name">
       <h1 class="wordmark">Hokku<span class="dot">.</span></h1>
@@ -262,12 +258,7 @@
         <span class="gloss">hokku · the opening verse</span>
       </div>
     </div>
-    <p class="tagline">No button, no app, and — as it turns out — no new computer. Each morning the day's news is distilled to seventeen syllables and printed in ink that stays, on a board you already own.</p>
-
-    <figure class="hero-shot">
-      <img src="images/hokku-inky-phat-zen.jpg" alt="An Inky pHAT e-paper display, seated on a Raspberry Pi, showing a printed haiku beside a red seal, set in a raked-sand zen garden" width="1600" height="1205" loading="eager">
-      <figcaption class="small">The Inky pHAT, inked and set down for the morning.</figcaption>
-    </figure>
+    <p class="tagline">Each morning it distils the day's news to seventeen syllables and prints them in ink that stays — a machine that asks nothing of you but a glance.</p>
 
     <div class="stamp">
       <div>
@@ -291,11 +282,11 @@
       <div class="chop"><span class="box"><span class="kanji">間</span></span><span class="gloss">ma · the space between</span></div>
       <div class="col">
         <p class="eyebrow">The idea</p>
-        <h2 class="title">A broadsheet is loud. A haiku is the opposite of a broadsheet.</h2>
+        <h2 class="title">A broadsheet is loud. A haiku is not.</h2>
       </div>
     </div>
     <p class="lede">A small computer — most likely one you already own — sits on the shelf with a panel of electronic paper and no controls at all. On a schedule you set — say seven each morning — it gathers today's headlines, weighs the mood of the day, and writes one original haiku, three lines, 5·7·5, that catches not the headlines but the <em>feeling</em> of the morning. It prints the verse in black with a seal in red, and it's simply there when you come down — the way the paper used to be.</p>
-    <p>The reading happens on the board now, not over the wire. <code>hokku.py</code> pulls a handful of items from three RSS feeds — BBC News, Sky News, The Guardian — using nothing heavier than the standard library's XML parser, then pastes those headlines straight into the prompt as plain text. The call to the <a href="https://docs.claude.com/en/api/overview">Messages API</a> that follows is a single flat-rate completion — no tools switched on, no agentic search. Claude composes from what it's handed rather than going and fetching it itself. With the button gone there's nothing to connect and nothing to solder: a small screen, an afternoon, and a quad-core Pi that's been idle in a drawer since 2020.</p>
+    <p>That's the whole promise: the day's noise arrives, and something quieter is left in its place.</p>
 
     <div class="duet">
       <div class="noise" aria-hidden="true">
@@ -312,7 +303,7 @@
       <div class="arrow"><svg class="seal" style="width:34px;height:34px"><use href="#seal"/></svg></div>
       <div class="signal">Held breath over rates—<br>the north leans into the wind,<br>someone packs a box.</div>
     </div>
-    <p class="small" style="margin-top:14px">Noise in, signal out. The verse on the right is the kind of thing the device produces from the morning on the left — it reads <em>across</em> the day rather than reciting any one headline.</p>
+    <p class="small" style="margin-top:14px">Noise in, signal out — the verse reads <em>across</em> the day rather than reciting any one headline.</p>
   </section>
 
   <!-- ============ THE BUILD / REUSE ============ -->
@@ -324,7 +315,18 @@
         <h2 class="title">A second life for a board you already have</h2>
       </div>
     </div>
-    <p class="lede">The first plan called for a brand-new Raspberry Pi Zero 2 W. Then they sold out everywhere — and besides, the least wasteful machine is the one already in the drawer. A <strong>Raspberry Pi 3 Model A+</strong>, boxed since 2020, has a 40-pin header, onboard Wi-Fi, and four idle cores. For an errand it runs once a morning, it is gloriously over-qualified. So this build reuses what you have. The one thing you buy is the page.</p>
+    <p class="lede">The first plan called for a brand-new Raspberry Pi Zero 2 W. Then they sold out everywhere — and besides, the least wasteful machine is the one already in the drawer. A <strong>Raspberry Pi 3 Model A+</strong>, boxed since 2020, is gloriously over-qualified for an errand it runs once a morning. So this build reuses what you have. The one thing you buy is the page.</p>
+
+    <div class="mottai">
+      <div class="vchop" aria-hidden="true">
+        <span class="v">勿体無</span>
+        <span class="gloss">mottainai · what a waste</span>
+      </div>
+      <div>
+        <p>There's a word in Japanese for the small grief of letting a usable thing go to waste — <em>mottainai</em>. And a craft, <em>kintsugi</em>, that mends a broken bowl with gold so its history is shown rather than hidden, the repair becoming the most honest part of the object.</p>
+        <p>Hokku is neither broken nor mended. But it runs on the same instinct: a capable little machine, dark for five years, given a quiet daily purpose instead of a landfill.</p>
+      </div>
+    </div>
 
     <table>
       <caption>Bill of materials · mostly things you own</caption>
@@ -334,12 +336,12 @@
       <tbody>
         <tr>
           <td class="part">Raspberry Pi 3 Model A+ <span class="part-note">already yours · since 2020</span></td>
-          <td>The brain. Quad-core, onboard Wi-Fi, 40-pin header the pHAT seats straight onto. It does this in its sleep.</td>
+          <td>The brain — and it does this job in its sleep.</td>
           <td class="num kept">0.00</td>
         </tr>
         <tr>
-          <td class="part">Inky pHAT <span class="part-note">250×122, four-colour e-paper</span></td>
-          <td>The page — and the one thing you actually buy. Plugs straight on, ribbon-attached, no soldering. <strong>The red prints the seal.</strong> <span class="part-note">A red/black/white version is ~£22 if you don't need yellow.</span></td>
+          <td class="part">Inky pHAT <span class="part-note">four-colour e-paper</span></td>
+          <td>The page — and the one thing you actually buy. <strong>The red prints the seal.</strong> <span class="part-note">A red/black/white version is ~£22 if you don't need yellow.</span></td>
           <td class="num">~25.00</td>
         </tr>
         <tr>
@@ -365,22 +367,6 @@
       </tbody>
     </table>
 
-    <div class="mottai">
-      <div class="vchop" aria-hidden="true">
-        <span class="v">勿体無</span>
-        <span class="gloss">mottainai · what a waste</span>
-      </div>
-      <div>
-        <p>There's a word in Japanese for the small grief of letting a usable thing go to waste — <em>mottainai</em>. And a craft, <em>kintsugi</em>, that mends a broken bowl with gold so its history is shown rather than hidden, the repair becoming the most honest part of the object.</p>
-        <p>Hokku is neither broken nor mended. But it runs on the same instinct: a capable little machine, dark for five years, given a quiet daily purpose instead of a landfill. The cheapest build and the least wasteful one turn out to be the same build.</p>
-      </div>
-    </div>
-
-    <div class="sidebar">
-      <p class="eyebrow" style="margin-bottom:.7rem">A note on the board</p>
-      <h3>The compute is featherweight <span class="pill">flat-rate · one completion</span></h3>
-      <p class="small" style="margin-bottom:0">The board does three small things: pull a few RSS items, send one completion request, ink the result. An earlier version let Claude browse the front pages itself, agentic search switched on — it read beautifully, and ran up about £6 in a single day of testing, billed per search. RSS injection costs the same flat rate every morning. Either way, a five-year-old quad-core Pi is wild overkill for the job — and exactly why reusing one costs nothing and wastes nothing.</p>
-    </div>
   </section>
 
   <!-- ============ HOW A MORNING GOES ============ -->
@@ -403,11 +389,11 @@
       </li>
       <li>
         <h4>It asks Claude to compose</h4>
-        <p>The headlines are pasted into the prompt as plain text and sent as a single completion — no tools, no browsing, no per-search billing. Claude weighs the mood of what it's been handed and writes.</p>
+        <p>The headlines are pasted into the prompt as plain text and sent to the <a href="https://docs.claude.com/en/api/overview">Messages API</a> as a single flat-rate completion — no tools, no browsing. Claude composes from what it's handed.</p>
       </li>
       <li>
         <h4>Three lines come back</h4>
-        <p>The response is parsed for the text blocks; out falls a fresh haiku, never the same twice, caught from the feeling of the morning rather than any one headline.</p>
+        <p>The response is parsed for the text blocks; out falls the morning's haiku.</p>
       </li>
       <li>
         <h4>The pHAT inks it</h4>
@@ -440,8 +426,8 @@ No jumper wires. No breadboard. It just presses down.
     </div>
 
     <ul class="stacklist">
-      <li><span class="role">Board</span><span class="what"><b>Raspberry Pi 3 Model A+</b> — quad-core, onboard Wi-Fi, 40-pin. Reused, not bought.</span></li>
-      <li><span class="role">Page</span><span class="what"><b>Inky pHAT</b> — 250×122, four-colour e-paper (EEPROM variant 23, <code>InkyJD79661</code> driver). Red ink for the seal.</span></li>
+      <li><span class="role">Board</span><span class="what"><b>Raspberry Pi 3 Model A+</b> — quad-core, onboard Wi-Fi, 40-pin header.</span></li>
+      <li><span class="role">Page</span><span class="what"><b>Inky pHAT</b> — 250×122, four-colour e-paper (EEPROM variant 23, <code>InkyJD79661</code> driver).</span></li>
       <li><span class="role">Feed</span><span class="what"><b>RSS</b> — BBC News, Sky News, The Guardian. Parsed with the standard library, no scraping.</span></li>
       <li><span class="role">Brain</span><span class="what"><b>Claude Opus 4.8 · Messages API</b> — one flat-rate completion, no tools. The restraint is in <code>max_tokens</code>, not the model — the same instinct as the board: full capability, deliberately given a small job.</span></li>
       <li><span class="role">Clock</span><span class="what"><b>cron</b> — one wake a day, then the board sleeps.</span></li>
@@ -547,7 +533,7 @@ display.<span class="fn">show</span>()</pre>
     </div>
     <div class="caveat">
       <h4>It asks, it doesn't browse</h4>
-      <p>An earlier version let Claude fetch the front pages itself, agentic search switched on. It read beautifully and cost real money — about £6 in a single day of testing, billed per search. Headlines pasted in as plain context and a flat-rate completion write just as well, for a predictable price.</p>
+      <p>An earlier version let Claude fetch the front pages itself, agentic search switched on. It read beautifully and cost real money — about £6 in a single day of testing, billed per search. Headlines pasted in as plain context write just as well, and a single flat-rate completion costs the same every morning.</p>
     </div>
     <div class="caveat">
       <h4>Old Pi, old Python</h4>
@@ -555,7 +541,7 @@ display.<span class="fn">show</span>()</pre>
     </div>
     <div class="caveat">
       <h4>E-paper is slow, and that's the point</h4>
-      <p>A refresh takes a few seconds and flickers as it settles. Then it costs nothing to hold — which for a thing you read once at breakfast is exactly right.</p>
+      <p>A refresh takes a few seconds and flickers as it settles — which for a thing you read once at breakfast is exactly right.</p>
     </div>
     <div class="caveat">
       <h4>Every morning is new</h4>
