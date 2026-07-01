@@ -1,0 +1,31 @@
+# Hokku
+
+A Raspberry Pi 3 Model A+ desk appliance that calls Claude each morning, feeds
+it the day's top UK headlines, and inks an original haiku to an Inky pHAT
+e-paper display. The project page — the idea, the build, the honest notes —
+is at [pixelbadger.github.io/hokku](https://pixelbadger.github.io/hokku).
+
+This file covers the physical build. The page describes what the thing is;
+this describes how to make one.
+
+## Build
+
+1. Flash Raspberry Pi OS Lite to a microSD card.
+2. Enable I2C and SPI (`raspi-config`), and add `dtoverlay=spi0-0cs` to
+   `/boot/config.txt` — this frees GPIO8 (CS0) from the SPI hardware so the
+   display driver can manage it manually.
+3. Seat the Inky pHAT on the 40-pin header. No wiring required.
+4. Install the Python dependencies system-wide (`sudo pip3`): `inky` from the
+   [GitHub source](https://github.com/pimoroni/inky) (not the PyPI package —
+   see the compatibility shim note below), Pillow 9.5.0, numpy, spidev,
+   smbus2, and RPi.GPIO.
+5. Copy `hokku.py` to `/home/pi/hokku.py`.
+6. Create `/etc/hokku.env` (mode `640`, owner `root:pi`) with
+   `ANTHROPIC_API_KEY` and `HOKKU_MODEL`.
+7. Add `/etc/cron.d/hokku` to fire once a day, sourcing the env file before
+   running the script.
+8. Test with a manual run and check the log after the first scheduled one:
+   ```bash
+   sudo bash -c 'set -a; . /etc/hokku.env; set +a; python3 /home/pi/hokku.py'
+   sudo tail -20 /var/log/hokku.log
+   ```
