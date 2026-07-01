@@ -220,6 +220,22 @@ def render(haiku, display, width, height):
     return img
 
 
+def season_phrase(dt):
+    """Coarse UK season + phase for `dt`, e.g. "early summer"."""
+    for name, months in (
+        ("winter", (12, 1, 2)),
+        ("spring", (3, 4, 5)),
+        ("summer", (6, 7, 8)),
+        ("autumn", (9, 10, 11)),
+    ):
+        if dt.month == months[0]:
+            return f"early {name}"
+        if dt.month == months[1]:
+            return f"mid {name}"
+        if dt.month == months[2]:
+            return f"late {name}"
+
+
 # ── fetch, compose, render — any failure here exits before the panel is touched ──
 try:
     context = "\n\n".join(
@@ -227,8 +243,12 @@ try:
         for source, url in FEEDS.items()
     )
 
+    now = datetime.now()
+    season_line = f"Today is {now.strftime('%-d %B')}, {season_phrase(now)} in Britain.\n\n"
+
     prompt = (
-        "Here are this morning's top UK headlines.\n\n"
+        season_line
+        + "Here are this morning's top UK headlines.\n\n"
         + context +
         "\n\nWrite ONE original haiku, three lines 5-7-5, that catches "
         "the mood of the morning — not any single headline. "
