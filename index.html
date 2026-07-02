@@ -322,7 +322,7 @@
         <h2 class="title">A second life for a board you already have</h2>
       </div>
     </div>
-    <p class="lede">The first plan called for a brand-new Raspberry Pi Zero 2 W. Then they sold out everywhere — and besides, the least wasteful machine is the one already in the drawer. A <strong>Raspberry Pi 3 Model A+</strong>, boxed since 2020, is gloriously over-qualified for an errand it runs once a morning. So this build reuses what you have. The one thing you buy is the page.</p>
+    <p class="lede">The first plan called for a brand-new Raspberry Pi Zero 2 W. Then they sold out everywhere — and besides, the least wasteful machine is the one already in the drawer. A <strong>Raspberry Pi 3 Model A+</strong>, boxed since 2020, is gloriously over-qualified for an errand it runs once a morning. So this build reuses what you have. The one thing you buy is the page, and the whole job is an afternoon — most of it spent waiting for pip.</p>
 
     <div class="mottai">
       <div class="vchop" aria-hidden="true">
@@ -396,7 +396,7 @@
       </li>
       <li>
         <h4>It asks Claude to compose</h4>
-        <p>The headlines are pasted into the prompt as plain text and sent to the <a href="https://docs.claude.com/en/api/overview">Messages API</a> as a single flat-rate completion — no tools, no browsing. Claude composes from what it's handed.</p>
+        <p>The headlines are pasted into the prompt as plain text — along with the date and where it sits in the British year, so a July verse doesn't come back dusted in frost — and sent to the <a href="https://docs.claude.com/en/api/overview">Messages API</a> as a single ordinary completion, no tools, no browsing. Claude composes from what it's handed.</p>
       </li>
       <li>
         <h4>Three lines come back</h4>
@@ -435,8 +435,8 @@ No jumper wires. No breadboard. It just presses down.
     <ul class="stacklist">
       <li><span class="role">Board</span><span class="what"><b>Raspberry Pi 3 Model A+</b> — quad-core, onboard Wi-Fi, 40-pin header.</span></li>
       <li><span class="role">Page</span><span class="what"><b>Inky pHAT</b> — 250×122, four-colour e-paper (EEPROM variant 23, <code>InkyJD79661</code> driver).</span></li>
-      <li><span class="role">Feed</span><span class="what"><b>RSS</b> — BBC News, Sky News, The Guardian. Parsed with the standard library, no scraping.</span></li>
-      <li><span class="role">Brain</span><span class="what"><b>Claude Opus 4.8 · Messages API</b> — one flat-rate completion, no tools. The restraint is in <code>max_tokens</code>, not the model — the same instinct as the board: full capability, deliberately given a small job.</span></li>
+      <li><span class="role">Feed</span><span class="what"><b>RSS</b> — BBC News, Sky News, The Guardian, parsed with the standard library.</span></li>
+      <li><span class="role">Brain</span><span class="what"><b>Claude Opus 4.8 · Messages API</b> — one plain completion, no tools. The restraint is in <code>max_tokens</code>, not the model — the same instinct as the board: full capability, deliberately given a small job.</span></li>
       <li><span class="role">Clock</span><span class="what"><b>cron</b> — one wake a day, then the board sleeps.</span></li>
       <li><span class="role">Keys</span><span class="what"><b>/etc/hokku.env</b> — the API key, sourced at run, never in the repo.</span></li>
     </ul>
@@ -466,6 +466,8 @@ HOKKU_MODEL=claude-opus-4-8</pre>
 <span class="k">import</span> os, json
 <span class="k">import</span> urllib.request
 <span class="k">import</span> xml.etree.ElementTree <span class="k">as</span> ET
+<span class="k">from</span> datetime <span class="k">import</span> datetime
+<span class="c"># gpiod compatibility shim elided — injected before inky is imported; see repo</span>
 <span class="k">from</span> inky.auto <span class="k">import</span> auto
 
 FEEDS = {
@@ -478,24 +480,27 @@ FEEDS = {
     titles = []
     <span class="k">for</span> name, url <span class="k">in</span> FEEDS.items():
         req = urllib.request.<span class="fn">Request</span>(url, headers={<span class="s">"User-Agent"</span>: <span class="s">"hokku/1.0"</span>})
-        <span class="k">with</span> urllib.request.<span class="fn">urlopen</span>(req, timeout=10) <span class="k">as</span> resp:
+        <span class="k">with</span> urllib.request.<span class="fn">urlopen</span>(req, timeout=15) <span class="k">as</span> resp:
             root = ET.<span class="fn">fromstring</span>(resp.<span class="fn">read</span>())
         titles += [item.<span class="fn">findtext</span>(<span class="s">"title"</span>) <span class="k">for</span> item <span class="k">in</span> root.<span class="fn">iter</span>(<span class="s">"item"</span>)][:limit]
     <span class="k">return</span> [t <span class="k">for</span> t <span class="k">in</span> titles <span class="k">if</span> t]
 
 headlines = <span class="fn">fetch_headlines</span>()
+now = datetime.<span class="fn">now</span>()
 
 prompt = (
-    <span class="s">"Here are today's UK headlines:\n"</span>
+    <span class="s">"Today is "</span> + now.<span class="fn">strftime</span>(<span class="s">"%-d %B"</span>) + <span class="s">", "</span>
+    + <span class="fn">season_phrase</span>(now) + <span class="s">" in Britain.\n\n"</span>   <span class="c"># season_phrase(): "early summer", "late autumn" — see repo</span>
+    + <span class="s">"Here are this morning's top UK headlines:\n"</span>
     + <span class="s">"\n"</span>.<span class="fn">join</span>(<span class="s">"- "</span> + h <span class="k">for</span> h <span class="k">in</span> headlines)
     + <span class="s">"\n\nWrite ONE original haiku, three lines 5-7-5, that catches "</span>
       <span class="s">"the mood of the morning — not any single headline. "</span>
-      <span class="s">"Reply with the three lines only."</span>
+      <span class="s">"Output only the three lines — no title, no preamble, no explanation."</span>
 )
 
 body = json.<span class="fn">dumps</span>({
     <span class="s">"model"</span>: os.environ.<span class="fn">get</span>(<span class="s">"HOKKU_MODEL"</span>, <span class="s">"claude-opus-4-8"</span>),
-    <span class="s">"max_tokens"</span>: 300,           <span class="c"># the restraint is here, not in the model</span>
+    <span class="s">"max_tokens"</span>: 300,           <span class="c"># plenty for seventeen syllables</span>
     <span class="s">"messages"</span>: [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}],
 }).<span class="fn">encode</span>()
 
@@ -508,13 +513,13 @@ req = urllib.request.<span class="fn">Request</span>(
         <span class="s">"content-type"</span>: <span class="s">"application/json"</span>,
     },
 )
-<span class="k">with</span> urllib.request.<span class="fn">urlopen</span>(req, timeout=30) <span class="k">as</span> resp:
+<span class="k">with</span> urllib.request.<span class="fn">urlopen</span>(req, timeout=120) <span class="k">as</span> resp:
     payload = json.<span class="fn">loads</span>(resp.<span class="fn">read</span>())
 text = <span class="s">""</span>.<span class="fn">join</span>(b[<span class="s">"text"</span>] <span class="k">for</span> b <span class="k">in</span> payload[<span class="s">"content"</span>] <span class="k">if</span> b[<span class="s">"type"</span>] == <span class="s">"text"</span>)
 lines = [l <span class="k">for</span> l <span class="k">in</span> text.<span class="fn">strip</span>().<span class="fn">splitlines</span>() <span class="k">if</span> l.<span class="fn">strip</span>()]
-haiku = <span class="s">"\n"</span>.<span class="fn">join</span>(lines[-3:])   <span class="c"># last 3 non-empty lines — Claude sometimes adds a preamble</span>
+haiku = <span class="s">"\n"</span>.<span class="fn">join</span>(lines[-3:])   <span class="c"># last 3 non-empty lines — the prompt forbids preamble, but poets ramble</span>
 
-<span class="c"># ---- ink it: palette-mode image, black text, red seal, then refresh ----</span>
+<span class="c"># ---- ink it — reached only on success; a failed morning never touches the panel ----</span>
 display = <span class="fn">auto</span>()
 img = render(haiku, display.width, display.height)   <span class="c"># render(): your layout — see repo</span>
 display.<span class="fn">set_image</span>(img)
@@ -541,11 +546,11 @@ display.<span class="fn">show</span>()</pre>
     </div>
     <div class="caveat">
       <h4>It needs the network</h4>
-      <p>Onboard Wi-Fi must be in range at the appointed hour, for both the RSS pulls and the API call. If a morning's request fails, the script exits before it ever touches the panel — no partial render, no error screen, just a line in the log. The e-paper only draws current to change, so a failed morning costs nothing and simply leaves yesterday's verse up a day longer.</p>
+      <p>Onboard Wi-Fi must be in range at the appointed hour, for both the RSS pulls and the API call. If a morning's request fails, the script exits before it ever touches the panel — no partial render, no error screen, just a line in the log. A failed morning simply leaves yesterday's verse up a day longer — which is exactly why the date sits beside the seal.</p>
     </div>
     <div class="caveat">
       <h4>It asks, it doesn't browse</h4>
-      <p>An earlier version let Claude fetch the front pages itself, agentic search switched on. It read beautifully and cost real money — about £6 in a single day of testing, billed per search. Headlines pasted in as plain context write just as well, and a single flat-rate completion costs the same every morning: six pounds a day became a fraction of a penny a morning.</p>
+      <p>An earlier version let Claude fetch the front pages itself, agentic search switched on. It read beautifully and cost real money — about £6 in a single day of testing, billed per search. Headlines pasted in as plain context write just as well, and a completion is priced in tokens — of which a haiku needs famously few: six pounds a day became a fraction of a penny a morning.</p>
       <!-- ~500 input tokens (24 headlines) + up to 300 output tokens, Claude Opus 4.8 @ $5/$25 per MTok (platform.claude.com/docs/en/pricing) ≈ $0.01/day -->
     </div>
     <div class="caveat">
