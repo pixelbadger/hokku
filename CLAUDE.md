@@ -81,7 +81,7 @@ The script has three layers:
 **1. gpiod/gpiodevice stubs** (top of file, before any inky import)  
 Injects fake `gpiod` and `gpiodevice` modules into `sys.modules` backed by `RPi.GPIO`. Key classes:
 - `_Value` — `ACTIVE=1`, `INACTIVE=0`
-- `_LineSettings` — stores direction, initial value, bias (currently stores `is_input` and `initial_high`; **see bug below**)
+- `_LineSettings` — stores direction, initial value, and bias (`is_input`, `initial_high`, `pull_up`) — the BUSY pin (GPIO17) is requested with `pull_up=True` so it reads HIGH when idle
 - `_Lines` — wraps RPi.GPIO; `set_value`, `get_value`, `wait_edge_events`, `read_edge_events`
 - `_Chip` — returns integer pin offsets, returns `_Lines` from `request_lines()`
 
@@ -108,68 +108,6 @@ Injects fake `gpiod` and `gpiodevice` modules into `sys.modules` backed by `RPi.
 (The border-pixel-budget logic that *does* work this way lives only in the older black/white/red drivers — `inky.py`'s base `Inky` class and `inky_ssd1608.py` — not in the colour JD79661 driver this Pi actually loads.)
 
 We added `display.set_border(YELLOW)` to `hokku.py` on 2026-06-30, then removed it once this was confirmed — it had no visible effect and wasn't the source of an "overlap" seen on the physical display, which is unexplained but unrelated to this call.
-
----
-
-## Current bug — BUSY pin timeout
-
-**Symptom:** Every run ends with:
-```
-UserWarning: Busy Wait: Timed out after 40.00s
-```
-The haiku text IS fetched and printed to stdout. **Confirmed (2026-06-30): the display does refresh correctly despite the warning** — physically checked after a live run with the new RSS/palette-mode code. The blind 40s sleep path is harmless, just slow; the underlying pull-up fix below is still unapplied and would only save time, not correctness.
-
-**Root cause diagnosis:**
-
-The `_busy_wait` method in `inky_jd79661.py` works like this:
-```python
-if get_value(busy_pin) == ACTIVE:   # HIGH = no display signal (pin floating/pulled up)
-    time.sleep(timeout)             # blind wait — display may or may not have refreshed
-    return
-
-while not get_value(busy_pin) == ACTIVE:  # poll until HIGH = done
-    sleep(0.1)
-    if timed_out: warn and return
-```
-
-The BUSY pin (GPIO17) reads **0 (LOW)** when idle because the stub sets it up as `GPIO.IN` **without a pull-up**:
-
-```python
-# current (wrong):
-GPIO.setup(pin, GPIO.IN)
-
-# should be (when Bias.PULL_UP is set in LineSettings):
-GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-```
-
-Without pull-up, the pin floats LOW. The driver sees LOW → enters the polling loop → never sees HIGH → times out.
-
-With pull-up:
-- Idle / no display: reads HIGH → driver takes the blind-sleep path → 40s pause, still works
-- Display connected, refreshing: display drives LOW (busy) → HIGH (done) → driver polls correctly
-
-**The fix:** In `hokku.py`, update `_LineSettings` to store `bias` and update `_Lines.__init__` to apply it:
-
-```python
-class _LineSettings:
-    def __init__(self, direction=None, output_value=None, bias=None,
-                 edge_detection=None, debounce_period=None):
-        self.is_input     = (direction == _Direction.INPUT)
-        self.initial_high = (output_value == _Value.ACTIVE)
-        self.pull_up      = (bias == _Bias.PULL_UP)   # ← add this
-
-class _Lines:
-    def __init__(self, config):
-        for pin, s in config.items():
-            if s.is_input:
-                pud = GPIO.PUD_UP if s.pull_up else GPIO.PUD_OFF   # ← use it
-                GPIO.setup(pin, GPIO.IN, pull_up_down=pud)
-            else:
-                GPIO.setup(pin, GPIO.OUT,
-                           initial=GPIO.HIGH if s.initial_high else GPIO.LOW)
-```
-
-After applying the fix: re-run `sudo bash -c 'set -a; . /etc/hokku.env; set +a; python3 /home/pi/hokku.py'` and watch whether the busy timeout disappears (display refreshes properly) or stays as a 40s blind sleep (display signal unreachable — may still update screen).
 
 ---
 
