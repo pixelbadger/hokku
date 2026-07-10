@@ -21,9 +21,13 @@ this describes how to make one.
    smbus2, and RPi.GPIO.
 5. Copy `hokku.py` to `/home/pi/hokku.py`.
 6. Create `/etc/hokku.env` (mode `640`, owner `root:pi`) with
-   `ANTHROPIC_API_KEY` and `HOKKU_MODEL`.
+   `ANTHROPIC_API_KEY` and `HOKKU_MODEL`. Optionally add `HOKKU_LAT`/`HOKKU_LON`
+   to override the dawn-tracking location (defaults to Chipping Norton).
 7. Add `/etc/cron.d/hokku` to fire once a day, sourcing the env file before
-   running the script.
+   running the script. The time only needs to be roughly right — after each
+   successful run, `hokku.py` recalculates tomorrow's sunrise and rewrites the
+   cron entry's minute/hour fields itself, so the wake time drifts with dawn
+   through the year.
 8. Test with a manual run and check the log after the first scheduled one:
    ```bash
    sudo bash -c 'set -a; . /etc/hokku.env; set +a; python3 /home/pi/hokku.py'

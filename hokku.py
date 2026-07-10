@@ -120,7 +120,7 @@ for _sub in ("errors", "platform"):
 sys.modules["gpiodevice"] = _gpiodev
 
 # ── now safe to import inky ───────────────────────────────────────────────────
-import os, json
+import os, json, math, re, calendar
 import urllib.request
 import xml.etree.ElementTree as ET
 from PIL import Image, ImageDraw, ImageFont
@@ -144,6 +144,95 @@ FONT_PATHS = [
 
 CJK_FONT_PATH = "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"
 SEAL_KANJI = "朝"  # "morning" — the seal marks the daily ritual
+
+# Location for dawn tracking — defaults to Chipping Norton, override via /etc/hokku.env
+HOKKU_LAT = float(os.environ.get("HOKKU_LAT", "51.9410"))
+HOKKU_LON = float(os.environ.get("HOKKU_LON", "-1.5453"))
+HOKKU_CRON_FILE = os.environ.get("HOKKU_CRON_FILE", "/etc/cron.d/hokku")
+
+
+def _julian_day(d):
+    """Julian day number for date `d` (Fliegel & Van Flandern)."""
+    a = (14 - d.month) // 12
+    y = d.year + 4800 - a
+    m = d.month + 12 * a - 3
+    return d.day + (153 * m + 2) // 5 + 365 * y + y // 4 - y // 100 + y // 400 - 32045
+
+
+def _julian_to_datetime(jd):
+    """Inverse of _julian_day, fractional (Meeus). Returns a naive UTC datetime."""
+    jd += 0.5
+    z = int(jd)
+    f = jd - z
+    if z < 2299161:
+        a = z
+    else:
+        alpha = int((z - 1867216.25) / 36524.25)
+        a = z + 1 + alpha - alpha // 4
+    b = a + 1524
+    c = int((b - 122.1) / 365.25)
+    d = int(365.25 * c)
+    e = int((b - d) / 30.6001)
+    day_frac = b - d - int(30.6001 * e) + f
+    day = int(day_frac)
+    frac = day_frac - day
+    month = e - 1 if e < 14 else e - 13
+    year = c - 4716 if month > 2 else c - 4715
+    hours = frac * 24
+    hour = int(hours)
+    minutes = (hours - hour) * 60
+    minute = int(minutes)
+    second = int(round((minutes - minute) * 60))
+    return datetime(year, month, day, hour, minute, second)
+
+
+def sunrise_utc(d, lat, lon):
+    """UTC datetime of sunrise (solar disk crests the horizon) for date `d` at lat/lon."""
+    jd = _julian_day(d)
+    n = jd - 2451545.0 + 0.0008
+    j_star = n - lon / 360.0
+
+    m_deg = (357.5291 + 0.98560028 * j_star) % 360.0
+    m = math.radians(m_deg)
+    c = 1.9148 * math.sin(m) + 0.0200 * math.sin(2 * m) + 0.0003 * math.sin(3 * m)
+    lam_deg = (m_deg + 102.9372 + c + 180.0) % 360.0
+    lam = math.radians(lam_deg)
+
+    j_transit = 2451545.0 + j_star + 0.0053 * math.sin(m) - 0.0069 * math.sin(2 * lam)
+
+    delta = math.asin(math.sin(lam) * math.sin(math.radians(23.4397)))
+    phi = math.radians(lat)
+    h0 = math.radians(-0.833)  # standard sunrise: atmospheric refraction + solar radius
+    cos_omega = (math.sin(h0) - math.sin(phi) * math.sin(delta)) / (math.cos(phi) * math.cos(delta))
+    cos_omega = max(-1.0, min(1.0, cos_omega))
+    omega_deg = math.degrees(math.acos(cos_omega))
+
+    j_rise = j_transit - omega_deg / 360.0
+    return _julian_to_datetime(j_rise)
+
+
+def next_dawn_local(after, lat, lon):
+    """Local (system-tz) sunrise datetime for the day after `after` (a date)."""
+    utc = sunrise_utc(after + timedelta(days=1), lat, lon)
+    epoch = calendar.timegm(utc.timetuple())
+    return datetime.fromtimestamp(epoch)
+
+
+def schedule_next_run(cron_path, run_at_local):
+    """Rewrite the minute/hour fields of the daily cron.d entry to `run_at_local`."""
+    with open(cron_path) as f:
+        content = f.read()
+    new_content, n = re.subn(
+        r"(?m)^\d{1,2} \d{1,2}(?= \* \* \* )",
+        f"{run_at_local.minute} {run_at_local.hour}",
+        content,
+    )
+    if n != 1:
+        raise RuntimeError(f"expected exactly 1 cron schedule line in {cron_path}, matched {n}")
+    tmp = cron_path + ".tmp"
+    with open(tmp, "w") as f:
+        f.write(new_content)
+    os.replace(tmp, cron_path)
 
 
 def fetch_headlines(url, limit=8):
@@ -291,3 +380,13 @@ except Exception as exc:
 print(haiku)
 display.set_image(img)
 display.show()
+
+# ── reschedule — nudge tomorrow's cron entry to tomorrow's dawn ──
+# Non-fatal: today's haiku already shipped, so a scheduling hiccup shouldn't
+# fail the run. Worst case the old time sticks until the next successful run.
+try:
+    next_run = next_dawn_local(datetime.now().date(), HOKKU_LAT, HOKKU_LON)
+    schedule_next_run(HOKKU_CRON_FILE, next_run)
+    print(f"hokku: next run scheduled for {next_run.strftime('%Y-%m-%d %H:%M')} (dawn)")
+except Exception as exc:
+    print(f"hokku: failed to reschedule next run: {exc}", file=sys.stderr)

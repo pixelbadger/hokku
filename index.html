@@ -292,7 +292,7 @@
         <h2 class="title">A broadsheet is loud. A haiku is not.</h2>
       </div>
     </div>
-    <p class="lede">A small computer — most likely one you already own — sits on the shelf with a panel of electronic paper and no controls at all. On a schedule you set — say seven each morning — it gathers today's headlines, weighs the mood of the day, and writes one original haiku, three lines, 5·7·5, that catches not the headlines but the <em>feeling</em> of the morning. It prints the verse in black with a seal in red, and it's simply there when you come down — the way the paper used to be.</p>
+    <p class="lede">A small computer — most likely one you already own — sits on the shelf with a panel of electronic paper and no controls at all. It keeps its own hours, waking a little earlier each week as the mornings lengthen and a little later as they shorten, gathers today's headlines, weighs the mood of the day, and writes one original haiku, three lines, 5·7·5, that catches not the headlines but the <em>feeling</em> of the morning. It prints the verse in black with a seal in red, and it's simply there when you come down — the way the paper used to be.</p>
     <p>That's the whole promise: the day's noise arrives, and something quieter is left in its place.</p>
 
     <div class="duet">
@@ -382,13 +382,13 @@
       <div class="chop"><span class="box"><span class="kanji">流</span></span><span class="gloss">nagare · the flow</span></div>
       <div class="col">
         <p class="eyebrow">How a morning goes</p>
-        <h2 class="title">Five quiet steps, once a day, then silence</h2>
+        <h2 class="title">Six quiet steps, once a day, then silence</h2>
       </div>
     </div>
     <ol class="flow">
       <li>
         <h4>The clock wakes it</h4>
-        <p>A single <code>cron</code> line fires at the hour you chose. There's no daemon humming all day — the script runs, finishes, and the board goes back to idle.</p>
+        <p>A single <code>cron</code> line fires — not at a fixed hour, but at whatever time yesterday's run worked out sunrise would fall today. There's no daemon humming all day — the script runs, finishes, and the board goes back to idle.</p>
       </li>
       <li>
         <h4>It gathers the headlines</h4>
@@ -405,6 +405,10 @@
       <li>
         <h4>The pHAT inks it</h4>
         <p>The verse is laid out in black, the seal stamped in red with a small date beside it — so a stale morning reads as stale, not as today's — and pushed to the e-paper. A few seconds of refresh, and it's there until tomorrow.</p>
+      </li>
+      <li>
+        <h4>It sets tomorrow's alarm</h4>
+        <p>Only once the panel is safely inked does it work out tomorrow's sunrise for wherever it sits, and rewrite the one line in <code>cron</code> that matters. A quiet correction, made once a day, so the board keeps pace with the sun without anyone touching a clock.</p>
       </li>
     </ol>
   </section>
@@ -437,7 +441,7 @@ No jumper wires. No breadboard. It just presses down.
       <li><span class="role">Page</span><span class="what"><b>Inky pHAT</b> — 250×122, four-colour e-paper (EEPROM variant 23, <code>InkyJD79661</code> driver).</span></li>
       <li><span class="role">Feed</span><span class="what"><b>RSS</b> — BBC News, Sky News, The Guardian, parsed with the standard library.</span></li>
       <li><span class="role">Brain</span><span class="what"><b>Claude Opus 4.8 · Messages API</b> — one plain completion, no tools. The restraint is in <code>max_tokens</code>, not the model — the same instinct as the board: full capability, deliberately given a small job.</span></li>
-      <li><span class="role">Clock</span><span class="what"><b>cron</b> — one wake a day, then the board sleeps.</span></li>
+      <li><span class="role">Clock</span><span class="what"><b>cron</b> — one wake a day, then the board sleeps. The wake time itself is rewritten each morning to track sunrise.</span></li>
       <li><span class="role">Keys</span><span class="what"><b>/etc/hokku.env</b> — the API key, sourced at run, never in the repo.</span></li>
     </ul>
   </section>
@@ -523,14 +527,19 @@ haiku = <span class="s">"\n"</span>.<span class="fn">join</span>(lines[-3:])   <
 display = <span class="fn">auto</span>()
 img = render(haiku, display.width, display.height)   <span class="c"># render(): your layout — see repo</span>
 display.<span class="fn">set_image</span>(img)
-display.<span class="fn">show</span>()</pre>
+display.<span class="fn">show</span>()
+
+<span class="c"># ---- set tomorrow's alarm — a scheduling hiccup here never undoes a shipped haiku ----</span>
+next_run = next_dawn_local(now.<span class="fn">date</span>(), LAT, LON)   <span class="c"># sunrise_utc(): self-contained NOAA-style equation, no deps — see repo</span>
+schedule_next_run(<span class="s">"/etc/cron.d/hokku"</span>, next_run)   <span class="c"># rewrites just the minute/hour fields below</span></pre>
     </div>
 
     <div class="code">
-      <span class="h">/etc/cron.d/hokku — 07:00, every day</span>
-<pre><span class="c"># wake · gather · compose · ink — source the env, then run once</span>
-0 7 * * *  pi  /usr/bin/env bash -c <span class="s">'set -a; . /etc/hokku.env; set +a; \
-                  /usr/bin/python3 /home/pi/hokku.py'</span></pre>
+      <span class="h">/etc/cron.d/hokku — rewritten every morning to track sunrise</span>
+<pre><span class="c"># wake · gather · compose · ink — hokku.py rewrites the time below after each run</span>
+59 4 * * *  pi  /usr/bin/env bash -c <span class="s">'set -a; . /etc/hokku.env; set +a; \
+                  /usr/bin/python3 /home/pi/hokku.py'</span>
+<span class="c"># 04:59 was dawn in early July; by late December it'll read closer to 08:10</span></pre>
     </div>
     <p class="small">The render step is left to taste — three lines of Fraunces and a red seal carrying the kanji <span lang="ja">朝</span> ("morning") in yellow is the house style, but the panel is yours to letter however you like.</p>
   </section>
@@ -556,6 +565,10 @@ display.<span class="fn">show</span>()</pre>
     <div class="caveat">
       <h4>Old Pi, old Python</h4>
       <p>System Python on this board is 3.7, which the e-paper library's newer GPIO dependency doesn't support — so <code>hokku.py</code> carries a small compatibility shim. It works; the only visible trace is a harmless warning some mornings while the display finishes refreshing.</p>
+    </div>
+    <div class="caveat">
+      <h4>It sets its own alarm, roughly</h4>
+      <p>Sunrise is worked out with a compact equation, not a service call — a couple of dozen lines of arithmetic, no library, no network. It lands within a few minutes of the real thing, which is close enough for a machine whose whole job is to be there by the time you are. If the rewrite itself ever fails, that morning's haiku still ships — only the alarm is left where it was, correcting itself the next time the run succeeds.</p>
     </div>
     <div class="caveat">
       <h4>E-paper is slow, and that's the point</h4>

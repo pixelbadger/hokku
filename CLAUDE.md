@@ -37,7 +37,7 @@ sshpass -p "$PI_PASSWORD" ssh -o StrictHostKeyChecking=no "$PI_USER@$PI_HOST"
 |---|---|
 | `/home/pi/hokku.py` | Main script (see below) — mirrored at `hokku.py` in this repo, deploy with `scp` (see Quick test commands) |
 | `/etc/hokku.env` | `ANTHROPIC_API_KEY` + `HOKKU_MODEL=claude-opus-4-8` — `640 root:pi` |
-| `/etc/cron.d/hokku` | Fires at `07:00` daily as `pi` user, logs to `/var/log/hokku.log` |
+| `/etc/cron.d/hokku` | Fires daily as `pi` user, logs to `/var/log/hokku.log`. Time is self-adjusting — see [Dawn tracking](#dawn-tracking) |
 
 `hokku.py` now also exists locally in this repo (it didn't before 2026-06-30 — pulled down with `scp` from the Pi). Treat the Pi as the source of truth at runtime, but edit locally and `scp` over rather than editing in place over SSH, so the repo copy doesn't drift.
 
@@ -98,6 +98,19 @@ Injects fake `gpiod` and `gpiodevice` modules into `sys.modules` backed by `RPi.
 > `render()` now auto-fits font size per render: tries `ImageFont.truetype(path, size)` descending from 18pt to a 10pt floor (verified: 10pt fits even a 41-character worst-case line with 6px margin each side), picks the largest size where the widest of the three lines fits within `width - 12`, and recomputes line spacing (`round(size * 1.45)`) accordingly. Falls back to `ImageFont.load_default()` (fixed size, no fit check) only if no system TTF is found, same as before.
 >
 > The red seal (bottom-right corner, `ss = 24`px square, `mg = 5`px margin from the edges) carries a yellow kanji centred inside it: `SEAL_KANJI = "朝"` ("morning"), drawn with `CJK_FONT_PATH = "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"` — the only CJK-capable font installed on the Pi (confirmed via `fc-list`; Noto CJK is not present). Font size is `ss - 4`, centred using `draw.textbbox` to account for glyph bearing. Kanji is drawn in `fill=YELLOW` to stay on the same palette-index fast path as the rest of the image.
+
+---
+
+## Dawn tracking
+
+Added 2026-07-10. After a successful `display.show()`, `hokku.py` computes tomorrow's sunrise (the moment the solar disk crests the horizon, i.e. standard "sunrise" — not civil twilight) and rewrites the minute/hour fields of `/etc/cron.d/hokku` in place, so the daily wake time drifts with dawn through the year instead of sitting fixed at one clock time.
+
+- **Location** is `HOKKU_LAT`/`HOKKU_LON` (env vars, default 51.9410/-1.5453 — Chipping Norton), read the same way as `HOKKU_MODEL` from `/etc/hokku.env`.
+- **No new dependencies.** The Pi has no `astral` package and no `atd` running (`at` isn't installed), so sunrise is computed with a self-contained NOAA-style sunrise-equation implementation (`sunrise_utc`, `_julian_day`, `_julian_to_datetime` in `hokku.py`) — pure `math`/`calendar`, no network call. Cross-checked against `api.sunrise-sunset.org` for Chipping Norton on two dates (Jan and Jul 2026); both agreed within ~3 minutes, which is expected accuracy for this simplified equation and plenty precise for waking an appliance.
+- **Local time conversion** goes UTC epoch → `datetime.fromtimestamp()`, which resolves against the Pi's system timezone (`Europe/London`, DST-aware per `timedatectl`) — no `zoneinfo`/`pytz` needed (`zoneinfo` isn't available on this Pi's Python 3.7 anyway).
+- **`schedule_next_run()`** rewrites only the cron line's leading `minute hour` fields via a regex anchored on the `* * *` day/month/weekday fields, leaving the rest of the line (user, command, log redirect) untouched. It requires an exact single match or raises — a cron file that doesn't look as expected is left alone rather than silently corrupted.
+- **Failure is non-fatal.** The reschedule runs after the haiku has already been inked, wrapped in its own `try/except` — a scheduling failure logs to stderr (and hence `/var/log/hokku.log`) but doesn't fail the run. Worst case, tomorrow's run fires at whatever time was last successfully written, which self-corrects on the next successful run.
+- Writing `/etc/cron.d/hokku` needs root; this works unmodified because the cron job itself already invokes the script via `sudo bash -c '...'`, so `hokku.py` is already running as root when it gets here.
 
 ---
 
